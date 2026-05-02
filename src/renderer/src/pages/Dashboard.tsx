@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 import { useEffect, useState } from 'react'
 
 interface PLRow { account_name: string; category: string; amount: number }
