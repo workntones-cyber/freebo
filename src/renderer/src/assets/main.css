@@ -1,6 +1,24 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ライトモード */
+[data-theme="light"] {
+  --bg:        #f5f6fa;
+  --bg2:       #ffffff;
+  --bg3:       #eef0f7;
+  --border:    #dde0ef;
+  --accent:    #3b6fe0;
+  --accent2:   #28a870;
+  --danger:    #d94f4f;
+  --text:      #1a1d2e;
+  --text2:     #5a6080;
+}
+
 :root {
+  --radius:    8px;
+  --sidebar-w: 220px;
+}
+
+[data-theme="dark"] {
   --bg:        #0f1117;
   --bg2:       #1a1d27;
   --bg3:       #22263a;
@@ -10,8 +28,6 @@
   --danger:    #e05c5c;
   --text:      #e8eaf6;
   --text2:     #8b91b0;
-  --radius:    8px;
-  --sidebar-w: 220px;
 }
 
 body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; font-size: 14px; }

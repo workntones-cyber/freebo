@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './assets/main.css'
 import Sidebar     from './components/Sidebar'
 import Dashboard   from './pages/Dashboard'
@@ -9,10 +9,21 @@ import InvoiceForm from './pages/InvoiceForm'
 import Reports     from './pages/Reports'
 import Settings    from './pages/Settings'
 
-type Page = 'dashboard' | 'journal' | 'journal-form' | 'invoice' | 'invoice-form' | 'reports' | 'settings'
+type Page  = 'dashboard' | 'journal' | 'journal-form' | 'invoice' | 'invoice-form' | 'reports' | 'settings'
+type Theme = 'dark' | 'light'
 
 export default function App(): JSX.Element {
-  const [page, setPage] = useState<Page>('dashboard')
+  const [page,  setPage]  = useState<Page>('dashboard')
+  const [theme, setTheme] = useState<Theme>(() => {
+    return (localStorage.getItem('freebo-theme') as Theme) ?? 'dark'
+  })
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('freebo-theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
 
   const renderPage = () => {
     switch (page) {
@@ -28,7 +39,7 @@ export default function App(): JSX.Element {
 
   return (
     <div className="layout">
-      <Sidebar current={page} onChange={p => setPage(p as Page)} />
+      <Sidebar current={page} onChange={p => setPage(p as Page)} theme={theme} onToggleTheme={toggleTheme} />
       <main className="main-content">{renderPage()}</main>
     </div>
   )
