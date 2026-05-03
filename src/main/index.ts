@@ -349,6 +349,38 @@ ipcMain.handle('journals:update', (_, data: {
   update()
 })
 
+// 領収書
+ipcMain.handle('receipt:select', async (_, { journalDate, description }: { journalDate: string; description: string }) => {
+  const { dialog } = await import('electron')
+  const result = await dialog.showOpenDialog({
+    title: '領収書を選択',
+    filters: [
+      { name: '画像・PDF', extensions: ['jpg', 'jpeg', 'png', 'pdf', 'webp'] }
+    ],
+    properties: ['openFile']
+  })
+
+  if (result.canceled || result.filePaths.length === 0) return null
+
+  const srcPath = result.filePaths[0]
+  const ext = path.extname(srcPath)
+  const dateStr = journalDate.replace(/-/g, '')
+  const safeName = description.replace(/[\\/:*?"<>|]/g, '_').slice(0, 20)
+  const fileName = `${dateStr}_${safeName}${ext}`
+
+  const destDir = path.join(app.getAppPath(), 'exports', 'receipts', journalDate.slice(0, 4))
+  fs.mkdirSync(destDir, { recursive: true })
+
+  const destPath = path.join(destDir, fileName)
+  fs.copyFileSync(srcPath, destPath)
+
+  return destPath
+})
+
+ipcMain.handle('receipt:open', async (_, filePath: string) => {
+  shell.openPath(filePath)
+})
+
 // PDF出力
 ipcMain.handle('pdf:export', async (event, { fileName, year }: { fileName: string; year: number }) => {
   const exportsDir = path.join(app.getAppPath(), 'exports', String(year))

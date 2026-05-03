@@ -37,6 +37,7 @@ export default function JournalForm({ onSaved }: { onSaved: () => void }): JSX.E
     { type: 'credit', accountId: 0, amount: '' },
   ])
   const [help, setHelp] = useState<string | null>(null)
+  const [receiptPath, setReceiptPath] = useState<string | null>(null)
   const [error, setError] = useState('')
 
   useEffect(() => { window.api.accounts.getAll().then(d => setAccounts(d as Account[])) }, [])
@@ -76,13 +77,13 @@ export default function JournalForm({ onSaved }: { onSaved: () => void }): JSX.E
     if (lines.some(l => !l.accountId)) { setError('すべての行の勘定科目を選択してください'); return }
     setError('')
     await window.api.journals.create({
-      date, description, memo, receiptPath: null, invoiceId: null,
+      date, description, memo, receiptPath: receiptPath, invoiceId: null,
       paymentMethod, currency,
       originalAmount: originalAmount ? parseFloat(originalAmount) : null,
       exchangeRate,
       lines: lines.map(l => ({ type: l.type, accountId: Number(l.accountId), amount: Number(l.amount) }))
     })
-    setDescription(''); setMemo(''); setOriginalAmount('')
+    setDescription(''); setMemo(''); setOriginalAmount(''); setReceiptPath(null)
     setCurrency('JPY'); setPaymentMethod('cash'); setExchangeRate(null)
     setLines([{ type: 'debit', accountId: 0, amount: '' }, { type: 'credit', accountId: 0, amount: '' }])
     onSaved()
@@ -247,6 +248,44 @@ export default function JournalForm({ onSaved }: { onSaved: () => void }): JSX.E
         <div className="form-group">
           <label className="form-label">メモ（任意）</label>
           <input className="form-input" placeholder="補足メモ" value={memo} onChange={e => setMemo(e.target.value)} />
+        </div>
+  
+        {/* 領収書添付 */}
+        <div className="form-group">
+          <label className="form-label">領収書（任意）</label>
+          {receiptPath ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 13, color: 'var(--accent2)' }}>✅ {receiptPath.split('\\').pop()}</span>
+              <button
+                className="btn btn-ghost"
+                style={{ padding: '4px 8px', fontSize: 12 }}
+                onClick={() => window.api.receipt.open(receiptPath)}
+              >
+                開く
+              </button>
+              <button
+                className="btn btn-danger"
+                style={{ padding: '4px 8px', fontSize: 12 }}
+                onClick={() => setReceiptPath(null)}
+              >
+                削除
+              </button>
+            </div>
+          ) : (
+            <button
+              className="btn btn-ghost"
+              onClick={async () => {
+                if (!date || !description) {
+                  setError('先に日付と摘要を入力してください')
+                  return
+                }
+                const result = await window.api.receipt.select({ journalDate: date, description })
+                if (result) setReceiptPath(result)
+              }}
+            >
+              📎 ファイルを選択
+            </button>
+          )}
         </div>
 
         {error && <p style={{ color: 'var(--danger)', marginBottom: 12 }}>{error}</p>}

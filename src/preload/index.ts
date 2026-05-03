@@ -44,6 +44,12 @@ contextBridge.exposeInMainWorld('api', {
     export: (fileName: string, year: number) => ipcRenderer.invoke('pdf:export', { fileName, year }),
   },
 
+  // 領収書
+  receipt: {
+    select: (data: { journalDate: string; description: string }) => ipcRenderer.invoke('receipt:select', data),
+    open: (filePath: string) => ipcRenderer.invoke('receipt:open', filePath),
+  },
+
   // 為替レート
   exchange: {
     getRate: (date: string) => ipcRenderer.invoke('exchange:getRate', date),

@@ -32,6 +32,10 @@ export interface IApi {
   pdf: {
     export: (fileName: string, year: number) => Promise<string>
   }
+  receipt: {
+    select: (data: { journalDate: string; description: string }) => Promise<string | null>
+    open: (filePath: string) => Promise<void>
+  }
 }
 
 declare global {

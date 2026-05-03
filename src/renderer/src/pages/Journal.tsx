@@ -11,6 +11,7 @@ interface JournalRow {
   exchange_rate: number | null
   is_settled: number
   settled_at: string | null
+  receipt_path: string | null
 }
 
 interface SettleForm {
@@ -145,6 +146,16 @@ export default function Journal({ onNew }: { onNew: () => void }): JSX.Element {
                           <span style={{ fontSize: 11, color: 'var(--text2)', background: 'var(--bg3)', padding: '1px 6px', borderRadius: 4 }}>
                             ${r.original_amount} @ {r.exchange_rate}
                           </span>
+                        )}
+                        {r.receipt_path && (
+                          <button
+                            className="btn btn-ghost"
+                            style={{ padding: '2px 6px', fontSize: 11 }}
+                            onClick={() => window.api.receipt.open(r.receipt_path!)}
+                            title="領収書を開く"
+                          >
+                            📎
+                          </button>
                         )}
                       </div>
                     </td>
