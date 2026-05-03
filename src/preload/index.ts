@@ -37,11 +37,21 @@ contextBridge.exposeInMainWorld('api', {
   // 帳票
   reports: {
     pl: (year: number) => ipcRenderer.invoke('reports:pl', year),
+    bs: (year: number) => ipcRenderer.invoke('reports:bs', year),
+    ownerLoanCheck: (year: number) => ipcRenderer.invoke('reports:ownerLoanCheck', year),
+    ownerLoanAutoRegister: (data: unknown) => ipcRenderer.invoke('reports:ownerLoanAutoRegister', data),
+    ledger: (year: number) => ipcRenderer.invoke('reports:ledger', year),
+    etaxGuide: (year: number) => ipcRenderer.invoke('reports:etaxGuide', year),
   },
 
   // PDF
   pdf: {
     export: (fileName: string, year: number) => ipcRenderer.invoke('pdf:export', { fileName, year }),
+  },
+
+  
+  data: {
+    reset: () => ipcRenderer.invoke('data:reset'),
   },
 
   // 領収書

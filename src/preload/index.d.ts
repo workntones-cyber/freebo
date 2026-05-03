@@ -28,6 +28,14 @@ export interface IApi {
   }
   reports: {
     pl: (year: number) => Promise<unknown[]>
+    bs: (year: number) => Promise<unknown[]>
+    ownerLoanCheck: (year: number) => Promise<unknown>
+    ownerLoanAutoRegister: (data: unknown) => Promise<number>
+    ledger: (year: number) => Promise<unknown[]>
+    etaxGuide: (year: number) => Promise<unknown>
+  }
+  data: {
+    reset: () => Promise<void>
   }
   pdf: {
     export: (fileName: string, year: number) => Promise<string>

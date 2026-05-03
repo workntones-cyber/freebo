@@ -6,6 +6,9 @@ const navItems: NavItem[] = [
   { label: '仕訳帳',         icon: '📒', page: 'journal' },
   { label: '請求書',         icon: '🧾', page: 'invoice' },
   { label: '帳票',           icon: '📈', page: 'reports' },
+  { label: '総勘定元帳',      icon: '📋', page: 'ledger' },
+  { label: 'e-Tax ガイド',    icon: '🧭', page: 'etax' },
+  { label: '税額シミュレーション', icon: '🧮', page: 'tax' },
   { label: '設定',           icon: '⚙️',  page: 'settings' },
 ]
 
