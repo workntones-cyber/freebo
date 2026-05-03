@@ -9,6 +9,7 @@ const navItems: NavItem[] = [
   { label: '総勘定元帳',      icon: '📋', page: 'ledger' },
   { label: 'e-Tax ガイド',    icon: '🧭', page: 'etax' },
   { label: '税額シミュレーション', icon: '🧮', page: 'tax' },
+  { label: '固定資産', icon: '🖥️', page: 'fixed-assets' },
   { label: '設定',           icon: '⚙️',  page: 'settings' },
 ]
 

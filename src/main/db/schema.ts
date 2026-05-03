@@ -54,6 +54,29 @@ export const schema = `
     unit_price   INTEGER NOT NULL,
     amount       INTEGER NOT NULL
   );
+
+    -- 固定資産
+  CREATE TABLE IF NOT EXISTS fixed_assets (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    name            TEXT    NOT NULL,
+    category        TEXT    NOT NULL,
+    acquired_date   TEXT    NOT NULL,
+    acquisition_cost INTEGER NOT NULL,
+    useful_life     INTEGER NOT NULL,
+    depreciation_rate REAL  NOT NULL,
+    is_active       INTEGER NOT NULL DEFAULT 1,
+    created_at      TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
+  );
+
+  -- 減価償却明細
+  CREATE TABLE IF NOT EXISTS depreciation_records (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    asset_id        INTEGER NOT NULL REFERENCES fixed_assets(id) ON DELETE CASCADE,
+    year            INTEGER NOT NULL,
+    amount          INTEGER NOT NULL,
+    journal_id      INTEGER,
+    created_at      TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
+  );
 `
 
 export const defaultAccounts = [

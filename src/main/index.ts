@@ -529,6 +529,91 @@ ipcMain.handle('data:reset', () => {
   reset()
 })
 
+// 固定資産
+ipcMain.handle('assets:getAll', () => {
+  return getDb().prepare('SELECT * FROM fixed_assets WHERE is_active = 1 ORDER BY acquired_date DESC').all()
+})
+
+ipcMain.handle('assets:create', (_, data: {
+  name: string
+  category: string
+  acquiredDate: string
+  acquisitionCost: number
+  usefulLife: number
+  depreciationRate: number
+}) => {
+  const result = getDb().prepare(`
+    INSERT INTO fixed_assets (name, category, acquired_date, acquisition_cost, useful_life, depreciation_rate)
+    VALUES (@name, @category, @acquiredDate, @acquisitionCost, @usefulLife, @depreciationRate)
+  `).run(data)
+  return result.lastInsertRowid
+})
+
+ipcMain.handle('assets:delete', (_, id: number) => {
+  getDb().prepare('UPDATE fixed_assets SET is_active = 0 WHERE id = ?').run(id)
+})
+
+ipcMain.handle('assets:getDepreciation', (_, assetId: number) => {
+  return getDb().prepare('SELECT * FROM depreciation_records WHERE asset_id = ? ORDER BY year').all(assetId)
+})
+
+ipcMain.handle('assets:registerDepreciation', (_, {
+  assetId, year, amount
+}: {
+  assetId: number
+  year: number
+  amount: number
+}) => {
+  const db = getDb()
+
+  // 既に登録済みか確認
+  const existing = db.prepare('SELECT id FROM depreciation_records WHERE asset_id = ? AND year = ?').get(assetId, year)
+  if (existing) throw new Error('この年度の償却はすでに登録されています')
+
+  // 資産情報を取得
+  const asset = db.prepare('SELECT * FROM fixed_assets WHERE id = ?').get(assetId) as {
+    name: string
+    acquisition_cost: number
+  }
+
+  // 減価償却費の勘定科目を取得（なければ雑費）
+  const depAccount = db.prepare(`SELECT id FROM accounts WHERE name LIKE '%減価償却%'`).get() as { id: number } | undefined
+  const expenseAccountId = depAccount?.id ?? (db.prepare(`SELECT id FROM accounts WHERE code='5190'`).get() as { id: number }).id
+
+  // 減価償却累計額の勘定科目を取得（なければ固定資産から直接減らす）
+  const insert = db.transaction(() => {
+    // 仕訳を作成
+    const journalResult = db.prepare(`
+      INSERT INTO journals (date, description, memo, payment_method, currency)
+      VALUES (?, ?, ?, 'bank', 'JPY')
+    `).run(
+      `${year}-12-31`,
+      `減価償却費（${asset.name}）`,
+      `${year}年分 定額法 ${amount.toLocaleString()}円`
+    )
+
+    const journalId = journalResult.lastInsertRowid
+
+    // 借方：減価償却費
+    db.prepare(`INSERT INTO journal_lines (journal_id, type, account_id, amount) VALUES (?, 'debit', ?, ?)`).run(journalId, expenseAccountId, amount)
+
+    // 貸方：固定資産（資産を直接減らす）
+    const assetAccount = db.prepare(`SELECT id FROM accounts WHERE name LIKE '%工具%' OR name LIKE '%備品%' OR code='1040'`).get() as { id: number } | undefined
+    const creditAccountId = assetAccount?.id ?? expenseAccountId
+    db.prepare(`INSERT INTO journal_lines (journal_id, type, account_id, amount) VALUES (?, 'credit', ?, ?)`).run(journalId, creditAccountId, amount)
+
+    // 償却記録を保存
+    db.prepare(`
+      INSERT INTO depreciation_records (asset_id, year, amount, journal_id)
+      VALUES (?, ?, ?, ?)
+    `).run(assetId, year, amount, journalId)
+
+    return journalId
+  })
+
+  return insert()
+})
+
 // PDF出力
 ipcMain.handle('pdf:export', async (event, { fileName, year }: { fileName: string; year: number }) => {
   const exportsDir = path.join(app.getAppPath(), 'exports', String(year))

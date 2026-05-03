@@ -11,8 +11,9 @@ import Ledger      from './pages/Ledger'
 import Settings    from './pages/Settings'
 import EtaxGuide   from './pages/EtaxGuide'
 import TaxSimulator from './pages/TaxSimulator'
+import FixedAssets from './pages/FixedAssets'
 
-type Page = 'dashboard' | 'journal' | 'journal-form' | 'invoice' | 'invoice-form' | 'reports' | 'ledger' | 'etax' | 'tax' | 'settings'
+type Page = 'dashboard' | 'journal' | 'journal-form' | 'invoice' | 'invoice-form' | 'reports' | 'ledger' | 'etax' | 'tax' | 'fixed-assets' | 'settings'
 type Theme = 'dark' | 'light'
 
 export default function App(): JSX.Element {
@@ -39,6 +40,7 @@ export default function App(): JSX.Element {
       case 'ledger':       return <Ledger />
       case 'etax':         return <EtaxGuide />
       case 'tax':          return <TaxSimulator />
+      case 'fixed-assets': return <FixedAssets />
       case 'settings':     return <Settings />
     }
   }

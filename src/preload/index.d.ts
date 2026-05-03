@@ -44,6 +44,13 @@ export interface IApi {
     select: (data: { journalDate: string; description: string }) => Promise<string | null>
     open: (filePath: string) => Promise<void>
   }
+  assets: {
+    getAll: () => Promise<unknown[]>
+    create: (data: unknown) => Promise<number>
+    delete: (id: number) => Promise<void>
+    getDepreciation: (assetId: number) => Promise<unknown[]>
+    registerDepreciation: (data: unknown) => Promise<number>
+  }
 }
 
 declare global {

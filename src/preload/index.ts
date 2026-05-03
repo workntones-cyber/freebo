@@ -60,6 +60,15 @@ contextBridge.exposeInMainWorld('api', {
     open: (filePath: string) => ipcRenderer.invoke('receipt:open', filePath),
   },
 
+    // 固定資産
+  assets: {
+    getAll: () => ipcRenderer.invoke('assets:getAll'),
+    create: (data: unknown) => ipcRenderer.invoke('assets:create', data),
+    delete: (id: number) => ipcRenderer.invoke('assets:delete', id),
+    getDepreciation: (assetId: number) => ipcRenderer.invoke('assets:getDepreciation', assetId),
+    registerDepreciation: (data: unknown) => ipcRenderer.invoke('assets:registerDepreciation', data),
+  },
+
   // 為替レート
   exchange: {
     getRate: (date: string) => ipcRenderer.invoke('exchange:getRate', date),
