@@ -5,10 +5,6 @@ interface BSRow { account_name: string; category: string; code: string; balance:
 
 type Tab = 'pl' | 'bs'
 
-const categoryLabel: Record<string, string> = {
-  asset: '資産', liability: '負債', equity: '資本'
-}
-
 interface OwnerLoanCheck {
   totalPersonal: number
   totalRegistered: number

@@ -100,7 +100,7 @@ ipcMain.handle('journals:getById', (_, id: number) => {
     JOIN accounts a ON a.id = jl.account_id
     WHERE jl.journal_id = ?
   `).all(id)
-  return { ...journal, lines }
+  return { ...(journal as object), lines }
 })
 
 ipcMain.handle('journals:create', (_, data) => {
@@ -131,7 +131,7 @@ ipcMain.handle('journals:delete', (_, id: number) => {
 })
 
 ipcMain.handle('journals:settle', async (_, {
-  journalId, settledAt, settledAmount, originalAmount, exchangeRate
+  journalId, settledAt, settledAmount
 }: {
   journalId: number
   settledAt: string
@@ -243,7 +243,7 @@ ipcMain.handle('invoices:getAll', () => {
 ipcMain.handle('invoices:getById', (_, id: number) => {
   const invoice = getDb().prepare('SELECT * FROM invoices WHERE id = ?').get(id)
   const items = getDb().prepare('SELECT * FROM invoice_items WHERE invoice_id = ?').all(id)
-  return { ...invoice, items }
+  return { ...(invoice as object), items }
 })
 
 ipcMain.handle('invoices:create', (_, data) => {
