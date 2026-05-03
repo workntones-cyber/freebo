@@ -1,11 +1,20 @@
 import { useEffect, useState } from 'react'
 
-interface InvoiceRow { id: number; invoice_number: string; client_name: string; issue_date: string; total_amount: number; status: string }
+interface InvoiceRow {
+  id: number
+  invoice_number: string
+  client_name: string
+  issue_date: string
+  total_amount: number
+  status: string
+}
 
 const statusLabel: Record<string, string> = { draft: '下書き', sent: '送付済み', paid: '入金済み' }
 
 export default function Invoice({ onNew }: { onNew: () => void }): JSX.Element {
-  const [rows, setRows] = useState<InvoiceRow[]>([])
+  const year = new Date().getFullYear()
+  const [rows, setRows]         = useState<InvoiceRow[]>([])
+  const [exporting, setExporting] = useState<number | null>(null)
 
   const load = () => window.api.invoices.getAll().then(d => setRows(d as InvoiceRow[]))
   useEffect(() => { load() }, [])
@@ -13,6 +22,15 @@ export default function Invoice({ onNew }: { onNew: () => void }): JSX.Element {
   const handlePaid = async (id: number) => {
     await window.api.invoices.updateStatus(id, 'paid')
     load()
+  }
+
+  const handleExport = async (row: InvoiceRow) => {
+    setExporting(row.id)
+    try {
+      await window.api.pdf.export(`請求書_${row.invoice_number}.pdf`, year)
+    } finally {
+      setExporting(null)
+    }
   }
 
   return (
@@ -31,7 +49,7 @@ export default function Invoice({ onNew }: { onNew: () => void }): JSX.Element {
               <th>発行日</th>
               <th style={{ textAlign: 'right' }}>金額</th>
               <th>ステータス</th>
-              <th style={{ width: 120 }}></th>
+              <th style={{ width: 220 }}></th>
             </tr>
           </thead>
           <tbody>
@@ -45,9 +63,25 @@ export default function Invoice({ onNew }: { onNew: () => void }): JSX.Element {
                   <td style={{ textAlign: 'right' }}>{r.total_amount.toLocaleString()} 円</td>
                   <td><span className={`badge badge-${r.status}`}>{statusLabel[r.status]}</span></td>
                   <td>
-                    {r.status !== 'paid' && (
-                      <button className="btn btn-success" style={{ padding: '4px 10px', fontSize: 12 }} onClick={() => handlePaid(r.id)}>入金済みにする</button>
-                    )}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        className="btn btn-ghost"
+                        style={{ padding: '4px 10px', fontSize: 12 }}
+                        onClick={() => handleExport(r)}
+                        disabled={exporting === r.id}
+                      >
+                        {exporting === r.id ? '生成中...' : '📄 PDF'}
+                      </button>
+                      {r.status !== 'paid' && (
+                        <button
+                          className="btn btn-success"
+                          style={{ padding: '4px 10px', fontSize: 12 }}
+                          onClick={() => handlePaid(r.id)}
+                        >
+                          入金済みにする
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

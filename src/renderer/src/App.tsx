@@ -28,7 +28,7 @@ export default function App(): JSX.Element {
   const renderPage = () => {
     switch (page) {
       case 'dashboard':    return <Dashboard />
-      case 'journal':      return <Journal />
+      case 'journal': return <Journal onNew={() => setPage('journal-form')} />
       case 'journal-form': return <JournalForm onSaved={() => setPage('journal')} />
       case 'invoice':      return <Invoice onNew={() => setPage('invoice-form')} />
       case 'invoice-form': return <InvoiceForm onSaved={() => setPage('invoice')} onCancel={() => setPage('invoice')} />

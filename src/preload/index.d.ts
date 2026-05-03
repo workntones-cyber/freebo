@@ -14,6 +14,11 @@ export interface IApi {
     getById: (id: number) => Promise<unknown>
     create: (data: unknown) => Promise<number>
     delete: (id: number) => Promise<void>
+    settle: (data: unknown) => Promise<number>
+    update: (data: unknown) => Promise<void>
+  }
+  exchange: {
+    getRate: (date: string) => Promise<number | null>
   }
   invoices: {
     getAll: () => Promise<unknown[]>
@@ -23,6 +28,9 @@ export interface IApi {
   }
   reports: {
     pl: (year: number) => Promise<unknown[]>
+  }
+  pdf: {
+    export: (fileName: string, year: number) => Promise<string>
   }
 }
 

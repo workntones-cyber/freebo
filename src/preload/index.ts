@@ -21,6 +21,9 @@ contextBridge.exposeInMainWorld('api', {
     getById: (id: number) => ipcRenderer.invoke('journals:getById', id),
     create: (data: unknown) => ipcRenderer.invoke('journals:create', data),
     delete: (id: number) => ipcRenderer.invoke('journals:delete', id),
+    // 仕訳追加分
+    settle: (data: unknown) => ipcRenderer.invoke('journals:settle', data),
+    update: (data: unknown) => ipcRenderer.invoke('journals:update', data),
   },
 
   // 請求書
@@ -35,4 +38,15 @@ contextBridge.exposeInMainWorld('api', {
   reports: {
     pl: (year: number) => ipcRenderer.invoke('reports:pl', year),
   },
+
+  // PDF
+  pdf: {
+    export: (fileName: string, year: number) => ipcRenderer.invoke('pdf:export', { fileName, year }),
+  },
+
+  // 為替レート
+  exchange: {
+    getRate: (date: string) => ipcRenderer.invoke('exchange:getRate', date),
+  },
+
 })

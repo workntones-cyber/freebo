@@ -77,6 +77,7 @@ export const defaultAccounts = [
   { code: '5020', name: '通信費',     category: 'expense',  isSystem: false, description: 'インターネット回線・スマホ代・ドメイン代・サーバー代など。' },
   { code: '5030', name: '旅費交通費', category: 'expense',  isSystem: false, description: '電車・バス・タクシー代、出張時の宿泊費など。' },
   { code: '5040', name: '新聞図書費', category: 'expense',  isSystem: false, description: '技術書・Udemy・オンライン学習サービスなど学習に使った費用。' },
+  { code: '5045', name: '研修費', category: 'expense', isSystem: false, description: '資格取得・試験受験料・セミナー参加費など、スキルアップのための費用。' },
   { code: '5050', name: '会議費',     category: 'expense',  isSystem: false, description: 'クライアントとの打ち合わせ時のカフェ代など。一人の場合は交際費になります。' },
   { code: '5060', name: '接待交際費', category: 'expense',  isSystem: false, description: 'クライアントや取引先との食事代など。' },
   { code: '5070', name: '外注費',     category: 'expense',  isSystem: false, description: '他のフリーランスへの発注費用。' },
