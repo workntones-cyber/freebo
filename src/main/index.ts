@@ -447,40 +447,98 @@ ipcMain.handle('reports:ownerLoanAutoRegister', (_, {
   return insert()
 })
 
-// 為替レート取得
+// 為替レート取得（フランクフルトAPI → 七十七銀行 → 手動入力）
 ipcMain.handle('exchange:getRate', async (_, date: string) => {
-  console.log('exchange:getRate called', date)
-  const year = date.slice(0, 4)
-  const month = String(parseInt(date.slice(5, 7)))
-  const day = String(parseInt(date.slice(8, 10)))
-  const targetComment = `${year}/${month}/${day}`
-
-  try {
-    const res = await fetch(`https://www.77bank.co.jp/kawase/usd${year}.html`, {
-      headers: { 'User-Agent': 'Mozilla/5.0' }
-    })
-    const buffer = await res.arrayBuffer()
-
-    const bytes = new Uint8Array(buffer)
-    let html = ''
-    for (let i = 0; i < bytes.length; i++) {
-      if ((bytes[i] >= 0x20 && bytes[i] <= 0x7E) || bytes[i] === 0x0A || bytes[i] === 0x0D) {
-        html += String.fromCharCode(bytes[i])
-      } else {
-        html += ' '
+  const tryFrankfurt = async (targetDate: string): Promise<{ rate: number; source: string; date: string } | null> => {
+    try {
+      const res = await fetch(`https://api.frankfurter.app/${targetDate}?from=USD&to=JPY`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      })
+      if (!res.ok) return null
+      const data = await res.json() as { rates?: { JPY?: number }; date?: string }
+      if (data.rates?.JPY) {
+        return {
+          rate: data.rates.JPY,
+          source: `ECB（欧州中央銀行）参考レート`,
+          date: data.date ?? targetDate
+        }
       }
+      return null
+    } catch {
+      return null
     }
-
-    const regex = new RegExp(`<!-+\\s*${targetComment.replace(/\//g, '\\/')}\\s*-+>([\\d.]+)`)
-    const match = html.match(regex)
-    console.log('Target:', targetComment, 'Match:', match?.[1])
-
-    if (match) return parseFloat(match[1])
-    return null
-  } catch (e) {
-    console.error('Fetch error:', e)
-    return null
   }
+
+  const trySeventySevenBank = async (targetDate: string): Promise<{ rate: number; source: string; date: string } | null> => {
+    try {
+      const year = targetDate.slice(0, 4)
+      const month = String(parseInt(targetDate.slice(5, 7)))
+      const day = String(parseInt(targetDate.slice(8, 10)))
+      const targetComment = `${year}/${month}/${day}`
+
+      const res = await fetch(`https://www.77bank.co.jp/kawase/usd${year}.html`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' }
+      })
+      const buffer = await res.arrayBuffer()
+      const bytes = new Uint8Array(buffer)
+      let html = ''
+      for (let i = 0; i < bytes.length; i++) {
+        if ((bytes[i] >= 0x20 && bytes[i] <= 0x7E) || bytes[i] === 0x0A || bytes[i] === 0x0D) {
+          html += String.fromCharCode(bytes[i])
+        } else {
+          html += ' '
+        }
+      }
+
+      const regex = new RegExp(`<!-+\\s*${targetComment.replace(/\//g, '\\/')}\\s*-+>([\\d.]+)`)
+      const match = html.match(regex)
+      if (match) {
+        return {
+          rate: parseFloat(match[1]),
+          source: '七十七銀行 TTM',
+          date: targetDate
+        }
+      }
+      return null
+    } catch {
+      return null
+    }
+  }
+
+  // 最大7日遡って取得
+  const getPastDates = (baseDate: string, days: number): string[] => {
+    const dates: string[] = []
+    for (let i = 0; i <= days; i++) {
+      const d = new Date(baseDate)
+      d.setDate(d.getDate() - i)
+      dates.push(d.toISOString().slice(0, 10))
+    }
+    return dates
+  }
+
+  const dates = getPastDates(date, 7)
+
+  // ① フランクフルトAPIで当日から遡って取得
+  for (const d of dates) {
+    const result = await tryFrankfurt(d)
+    if (result) {
+      console.log(`Rate from Frankfurt: ${result.rate} (${result.date})`)
+      return result
+    }
+  }
+
+  // ② 七十七銀行で当日から遡って取得
+  for (const d of dates) {
+    const result = await trySeventySevenBank(d)
+    if (result) {
+      console.log(`Rate from 77bank: ${result.rate} (${result.date})`)
+      return result
+    }
+  }
+
+  // ③ 両方失敗
+  console.log('All rate sources failed')
+  return null
 })
 
 // 領収書

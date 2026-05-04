@@ -18,7 +18,7 @@ export interface IApi {
     update: (data: unknown) => Promise<void>
   }
   exchange: {
-    getRate: (date: string) => Promise<number | null>
+    getRate: (date: string) => Promise<{ rate: number; source: string; date: string } | null>
   }
   invoices: {
     getAll: () => Promise<unknown[]>

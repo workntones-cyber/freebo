@@ -24,6 +24,7 @@ interface JournalDetail {
   currency: string
   original_amount: number | null
   exchange_rate: number | null
+  receipt_path: string | null 
   lines: { id: number; type: string; account_id: number; account_name: string; amount: number }[]
 }
 
@@ -135,7 +136,8 @@ export default function Journal({ onNew }: { onNew: () => void }): JSX.Element {
   const handleSettleDateChange = async (date: string) => {
     if (!settleForm) return
     setSettleForm(f => f ? { ...f, settledAt: date, rate: null, rateLoading: true } : f)
-    const rate = await window.api.exchange.getRate(date)
+    const result = await window.api.exchange.getRate(date)
+    const rate = result?.rate ?? null
     setSettleForm(f => f ? { ...f, rate, rateLoading: false } : f)
   }
 
@@ -196,7 +198,7 @@ export default function Journal({ onNew }: { onNew: () => void }): JSX.Element {
               <th>摘要</th>
               <th style={{ width: 110 }}>支払方法</th>
               <th>借方 / 貸方</th>
-              <th style={{ width: 180 }}></th>
+              <th style={{ width: 140 }}></th>
             </tr>
           </thead>
           <tbody>
@@ -235,19 +237,33 @@ export default function Journal({ onNew }: { onNew: () => void }): JSX.Element {
                         return <div key={i}>{type === 'debit' ? '借' : '貸'}）{name} {Number(amount).toLocaleString()}円</div>
                       })}
                     </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: 6 }}>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {needsSettle && (
-                          <button className="btn btn-success" style={{ padding: '4px 8px', fontSize: 12 }} onClick={() => openSettle(r)}>
-                            引き落とし
+                          <button
+                            className="btn btn-success"
+                            style={{ padding: '3px 8px', fontSize: 11, width: '100%', justifyContent: 'center' }}
+                            onClick={() => openSettle(r)}
+                          >
+                            💳 引き落とし
                           </button>
                         )}
-                        <button className="btn btn-ghost" style={{ padding: '4px 8px', fontSize: 12 }} onClick={() => openEdit(r.id)}>
-                          編集
-                        </button>
-                        <button className="btn btn-danger" style={{ padding: '4px 8px', fontSize: 12 }} onClick={() => handleDelete(r.id)}>
-                          削除
-                        </button>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button
+                            className="btn btn-ghost"
+                            style={{ padding: '3px 8px', fontSize: 11, flex: 1, justifyContent: 'center' }}
+                            onClick={() => openEdit(r.id)}
+                          >
+                            編集
+                          </button>
+                          <button
+                            className="btn btn-danger"
+                            style={{ padding: '3px 8px', fontSize: 11, flex: 1, justifyContent: 'center' }}
+                            onClick={() => handleDelete(r.id)}
+                          >
+                            削除
+                          </button>
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -332,6 +348,35 @@ export default function Journal({ onNew }: { onNew: () => void }): JSX.Element {
                 onChange={e => setEditData(d => d ? { ...d, memo: e.target.value } : d)} />
             </div>
 
+            <div className="form-group">
+              <label className="form-label">領収書（任意）</label>
+              {editData.receipt_path ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 13, color: 'var(--accent2)' }}>
+                    ✅ {editData.receipt_path.split('\\').pop()}
+                  </span>
+                  <button className="btn btn-ghost" style={{ padding: '4px 8px', fontSize: 12 }}
+                    onClick={() => window.api.receipt.open(editData.receipt_path!)}>
+                    開く
+                  </button>
+                  <button className="btn btn-danger" style={{ padding: '4px 8px', fontSize: 12 }}
+                    onClick={() => setEditData(d => d ? { ...d, receipt_path: null } : d)}>
+                    削除
+                  </button>
+                </div>
+              ) : (
+                <button className="btn btn-ghost" onClick={async () => {
+                  const result = await window.api.receipt.select({
+                    journalDate: editData.date,
+                    description: editData.description
+                  })
+                  if (result) setEditData(d => d ? { ...d, receipt_path: result } : d)
+                }}>
+                  📎 ファイルを選択
+                </button>
+              )}
+            </div>
+
             {editError && <p style={{ color: 'var(--danger)', marginBottom: 12 }}>{editError}</p>}
 
             <div style={{ display: 'flex', gap: 12 }}>
@@ -361,7 +406,12 @@ export default function Journal({ onNew }: { onNew: () => void }): JSX.Element {
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label">参考レート（{settleForm.settledAt}）</label>
                 <div style={{ padding: '8px 12px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: settleForm.rate ? 'var(--accent2)' : 'var(--text2)' }}>
-                  {settleForm.rateLoading ? '取得中...' : settleForm.rate ? `${settleForm.rate} 円/USD` : '---'}
+                  {settleForm.rateLoading
+                    ? '取得中...'
+                    : settleForm.rate
+                      ? `${settleForm.rate} 円/USD`
+                      : '---'
+                  }
                 </div>
               </div>
             </div>
