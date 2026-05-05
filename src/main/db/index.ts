@@ -75,7 +75,7 @@ export function initDb(): void {
   seedIfEmpty()
 }
 
-function seedIfEmpty(): void {
+export function seedIfEmpty(): void {
   const count = (db.prepare('SELECT COUNT(*) as count FROM accounts').get() as { count: number }).count
   if (count > 0) return
 
@@ -105,6 +105,20 @@ function seedIfEmpty(): void {
     ['taxMode', 'exempt'],
     ['declarationType', 'blue_65'],
     ['withholding', 'false'],
+    ['postalCode', ''],
+    ['address', ''],
+    ['phone', ''],
+    ['email', ''],
+    ['bankName', ''],
+    ['bankBranch', ''],
+    ['bankType', '普通'],
+    ['bankNumber', ''],
+    ['bankHolder', ''],
+    ['nationalHealthInsurance', '0'],
+    ['nationalPension', '0'],
+    ['lifeInsurance', '0'],
+    ['medicalExpense', '0'],
+    ['otherDeduction', '0'],
   ]
 
   const insertSettings = db.transaction(() => {

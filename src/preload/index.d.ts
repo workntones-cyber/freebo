@@ -25,6 +25,9 @@ export interface IApi {
     getById: (id: number) => Promise<unknown>
     create: (data: unknown) => Promise<number>
     updateStatus: (id: number, status: string) => Promise<void>
+    update: (data: unknown) => Promise<void>
+    delete: (id: number) => Promise<void>
+    openFolder: (year: number) => Promise<void>
   }
   reports: {
     pl: (year: number) => Promise<unknown[]>
@@ -36,13 +39,17 @@ export interface IApi {
   }
   data: {
     reset: () => Promise<void>
+    fullReset: (deleteFiles: boolean) => Promise<void>
   }
   pdf: {
-    export: (fileName: string, year: number) => Promise<string>
+    export: (fileName: string, year: number, type: string, data: unknown) => Promise<string>
   }
   receipt: {
     select: (data: { journalDate: string; description: string }) => Promise<string | null>
     open: (filePath: string) => Promise<void>
+    getAll: () => Promise<unknown[]>
+    openFolder: () => Promise<void>
+    migratePaths: () => Promise<number>
   }
   assets: {
     getAll: () => Promise<unknown[]>

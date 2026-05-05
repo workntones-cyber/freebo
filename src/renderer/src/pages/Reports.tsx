@@ -51,8 +51,11 @@ export default function Reports(): JSX.Element {
   const handleExport = async () => {
     setExporting(true)
     try {
-      const fileName = tab === 'pl' ? `損益計算書_${year}.pdf` : `貸借対照表_${year}.pdf`
-      await window.api.pdf.export(fileName, year)
+      if (tab === 'pl') {
+        await window.api.pdf.export(`損益計算書_${year}.pdf`, year, 'pl', plRows)
+      } else {
+        await window.api.pdf.export(`貸借対照表_${year}.pdf`, year, 'bs', bsRows)
+      }
     } finally {
       setExporting(false)
     }

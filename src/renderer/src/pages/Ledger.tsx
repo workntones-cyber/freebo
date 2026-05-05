@@ -37,7 +37,7 @@ export default function Ledger(): JSX.Element {
   const handleExport = async () => {
     setExporting(true)
     try {
-      await window.api.pdf.export(`総勘定元帳_${year}.pdf`, year)
+      await window.api.pdf.export(`総勘定元帳_${year}.pdf`, year, 'ledger', accounts)
     } finally {
       setExporting(false)
     }

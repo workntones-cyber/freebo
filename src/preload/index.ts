@@ -32,6 +32,9 @@ contextBridge.exposeInMainWorld('api', {
     getById: (id: number) => ipcRenderer.invoke('invoices:getById', id),
     create: (data: unknown) => ipcRenderer.invoke('invoices:create', data),
     updateStatus: (id: number, status: string) => ipcRenderer.invoke('invoices:updateStatus', id, status),
+    update: (data: unknown) => ipcRenderer.invoke('invoices:update', data),
+    delete: (id: number) => ipcRenderer.invoke('invoices:delete', id),
+    openFolder: (year: number) => ipcRenderer.invoke('invoice:openFolder', year),
   },
 
   // 帳票
@@ -46,18 +49,23 @@ contextBridge.exposeInMainWorld('api', {
 
   // PDF
   pdf: {
-    export: (fileName: string, year: number) => ipcRenderer.invoke('pdf:export', { fileName, year }),
+    export: (fileName: string, year: number, type: string, data: unknown) =>
+      ipcRenderer.invoke('pdf:export', { fileName, year, type, data }),
   },
 
   
   data: {
     reset: () => ipcRenderer.invoke('data:reset'),
+    fullReset: (deleteFiles: boolean) => ipcRenderer.invoke('data:fullReset', deleteFiles),
   },
 
   // 領収書
   receipt: {
     select: (data: { journalDate: string; description: string }) => ipcRenderer.invoke('receipt:select', data),
     open: (filePath: string) => ipcRenderer.invoke('receipt:open', filePath),
+    getAll: () => ipcRenderer.invoke('receipt:getAll'),
+    openFolder: () => ipcRenderer.invoke('receipt:openFolder'),
+    migratePaths: () => ipcRenderer.invoke('receipt:migratePaths'),
   },
 
     // 固定資産

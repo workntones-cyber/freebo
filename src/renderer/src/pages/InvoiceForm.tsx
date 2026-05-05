@@ -28,7 +28,7 @@ export default function InvoiceForm({ onSaved, onCancel }: { onSaved: () => void
     setError('')
     await window.api.invoices.create({
       invoiceNumber, clientName, clientAddress, issueDate, dueDate,
-      subtotal, totalAmount: subtotal, status: 'sent', memo,
+      subtotal, totalAmount: subtotal, status: 'draft', memo,
       items: items.map(it => ({
         description: it.description, quantity: it.quantity,
         unitPrice: Number(it.unitPrice), amount: it.quantity * Number(it.unitPrice)
