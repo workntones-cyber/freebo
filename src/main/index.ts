@@ -282,7 +282,8 @@ ipcMain.handle('invoices:delete', (_, id: number) => {
   } | undefined
 
   if (invoice) {
-    const year = new Date().getFullYear()
+    const invoiceData = db.prepare('SELECT issue_date FROM invoices WHERE id = ?').get(id) as { issue_date: string } | undefined
+    const year = invoiceData ? parseInt(invoiceData.issue_date.slice(0, 4)) : new Date().getFullYear()
     // 請求書専用フォルダを参照
     const invoicesDir = path.join(app.getPath('userData'), 'exports', String(year), 'invoices')
     const oldName = `請求書_${invoice.invoice_number}_${invoice.client_name}.pdf`
