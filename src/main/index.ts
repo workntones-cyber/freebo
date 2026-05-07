@@ -831,6 +831,7 @@ ipcMain.handle('invoice:openFolder', (_, year: number) => {
   shell.openPath(dir)
 })
 
+
 // PDF出力
 ipcMain.handle('pdf:export', async (_, { fileName, year, type, data }: {
   fileName: string
@@ -1190,6 +1191,135 @@ function generatePrintHtml(type: string, data: unknown, year: number): string {
 }
 
 // ==============================
+// バックアップ
+// ==============================
+
+async function checkAutoBackup(): Promise<void> {
+  const db = getDb()
+  const autoEnabled = db.prepare("SELECT value FROM settings WHERE key = 'backupAutoEnabled'").get() as { value: string } | undefined
+  if (!autoEnabled || autoEnabled.value !== 'true') return
+
+  const autoDay = parseInt(
+    (db.prepare("SELECT value FROM settings WHERE key = 'backupAutoDay'").get() as { value: string } | undefined)?.value ?? '1'
+  )
+  const today = new Date()
+
+  // 当月すでに自動バックアップ済みか確認
+  const row = db.prepare("SELECT value FROM settings WHERE key = 'backupHistory'").get() as { value: string } | undefined
+  const entries = row ? JSON.parse(row.value) : []
+  const thisMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
+  const alreadyDone = entries.some((e: { date: string; type: string }) =>
+    e.type === 'auto' && e.date.startsWith(thisMonth)
+  )
+  if (alreadyDone) return
+
+  // 設定日を過ぎていなければスキップ
+  if (today.getDate() < autoDay) return
+
+  // 自動バックアップ実行
+  const backupDir = path.join(app.getPath('userData'), 'backups')
+  fs.mkdirSync(backupDir, { recursive: true })
+  const timestamp = today.toISOString().replace(/[:.]/g, '-').slice(0, 19)
+  const fileName = `freebo_backup_${timestamp}_auto.db`
+  const destPath = path.join(backupDir, fileName)
+  const srcPath = path.join(app.getPath('userData'), 'freebo.db')
+  fs.copyFileSync(srcPath, destPath)
+
+  const newEntry = {
+    fileName,
+    path: destPath,
+    date: today.toISOString(),
+    type: 'auto',
+    size: fs.statSync(destPath).size,
+  }
+  entries.unshift(newEntry)
+  if (entries.length > 20) entries.pop()
+  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('backupHistory', ?)").run(JSON.stringify(entries))
+
+  console.log(`Auto backup created: ${fileName}`)
+}
+
+ipcMain.handle('backup:create', (_, manual: boolean) => {
+  const backupDir = path.join(app.getPath('userData'), 'backups')
+  fs.mkdirSync(backupDir, { recursive: true })
+
+  const now = new Date()
+  const timestamp = now.toISOString().replace(/[:.]/g, '-').slice(0, 19)
+  const type = manual ? 'manual' : 'auto'
+  const fileName = `freebo_backup_${timestamp}_${type}.db`
+  const destPath = path.join(backupDir, fileName)
+  const srcPath = path.join(app.getPath('userData'), 'freebo.db')
+  fs.copyFileSync(srcPath, destPath)
+
+  const db = getDb()
+  const row = db.prepare("SELECT value FROM settings WHERE key = 'backupHistory'").get() as { value: string } | undefined
+  const entries = row ? JSON.parse(row.value) : []
+  const newEntry = {
+    fileName,
+    path: destPath,
+    date: now.toISOString(),
+    type,
+    size: fs.statSync(destPath).size,
+  }
+  entries.unshift(newEntry)
+  if (entries.length > 20) entries.pop()
+  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('backupHistory', ?)").run(JSON.stringify(entries))
+
+  return newEntry
+})
+
+ipcMain.handle('backup:getHistory', () => {
+  const db = getDb()
+  const row = db.prepare("SELECT value FROM settings WHERE key = 'backupHistory'").get() as { value: string } | undefined
+  return row ? JSON.parse(row.value) : []
+})
+
+ipcMain.handle('backup:restore', (_, filePath: string) => {
+  const srcPath = path.join(app.getPath('userData'), 'freebo.db')
+  fs.copyFileSync(filePath, srcPath)
+})
+
+ipcMain.handle('backup:delete', (_, fileName: string) => {
+  const db = getDb()
+  const backupDir = path.join(app.getPath('userData'), 'backups')
+  const filePath = path.join(backupDir, fileName)
+
+  try {
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath)
+  } catch (e) {
+    console.error('Backup delete failed:', e)
+  }
+
+  const row = db.prepare("SELECT value FROM settings WHERE key = 'backupHistory'").get() as { value: string } | undefined
+  const entries = row ? JSON.parse(row.value) : []
+  const filtered = entries.filter((e: { fileName: string }) => e.fileName !== fileName)
+  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('backupHistory', ?)").run(JSON.stringify(filtered))
+})
+
+ipcMain.handle('backup:deleteAll', () => {
+  const db = getDb()
+  const backupDir = path.join(app.getPath('userData'), 'backups')
+
+  try {
+    if (fs.existsSync(backupDir)) {
+      fs.rmSync(backupDir, { recursive: true, force: true })
+    }
+  } catch (e) {
+    console.error('Backup deleteAll failed:', e)
+  }
+
+  db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('backupHistory', '[]')").run()
+})
+
+ipcMain.handle('backup:openFolder', () => {
+  const backupDir = path.join(app.getPath('userData'), 'backups')
+  fs.mkdirSync(backupDir, { recursive: true })
+  shell.openPath(backupDir)
+})
+
+
+
+// ==============================
 // アプリ起動
 // ==============================
 
@@ -1202,6 +1332,9 @@ app.whenReady().then(() => {
   })
 
   createWindow()
+
+  // 自動バックアップチェック（起動3秒後に実行）
+  setTimeout(() => checkAutoBackup(), 3000)
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

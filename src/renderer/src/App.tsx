@@ -12,9 +12,10 @@ import Settings    from './pages/Settings'
 import EtaxGuide   from './pages/EtaxGuide'
 import TaxSimulator from './pages/TaxSimulator'
 import FixedAssets from './pages/FixedAssets'
-import Receipts from './pages/Receipts'
+import Receipts    from './pages/Receipts'
+import Backup      from './pages/Backup'
 
-type Page = 'dashboard' | 'journal' | 'journal-form' | 'invoice' | 'invoice-form' | 'reports' | 'ledger' | 'etax' | 'tax' | 'fixed-assets' | 'receipts' | 'settings'
+type Page = 'dashboard' | 'journal' | 'journal-form' | 'invoice' | 'invoice-form' | 'reports' | 'ledger' | 'etax' | 'tax' | 'fixed-assets' | 'receipts' | 'settings' | 'backup'
 type Theme = 'dark' | 'light'
 
 export default function App(): JSX.Element {
@@ -44,6 +45,7 @@ export default function App(): JSX.Element {
       case 'fixed-assets': return <FixedAssets />
       case 'receipts':     return <Receipts />
       case 'settings':     return <Settings />
+      case 'backup':       return <Backup />
     }
   }
 

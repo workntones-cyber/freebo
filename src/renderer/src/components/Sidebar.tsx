@@ -12,6 +12,7 @@ const navItems: NavItem[] = [
   { label: '税額シミュレーション', icon: '🧮', page: 'tax' },
   { label: '固定資産', icon: '🖥️', page: 'fixed-assets' },
   { label: '設定',           icon: '⚙️',  page: 'settings' },
+  { label: 'バックアップ', icon: '📦', page: 'backup' },
 ]
 
 interface Props {

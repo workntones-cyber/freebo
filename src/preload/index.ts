@@ -82,4 +82,14 @@ contextBridge.exposeInMainWorld('api', {
     getRate: (date: string) => ipcRenderer.invoke('exchange:getRate', date),
   },
 
+  // バックアップ
+  backup: {
+    create: (manual: boolean) => ipcRenderer.invoke('backup:create', manual),
+    getHistory: () => ipcRenderer.invoke('backup:getHistory'),
+    restore: (filePath: string) => ipcRenderer.invoke('backup:restore', filePath),
+    delete: (fileName: string) => ipcRenderer.invoke('backup:delete', fileName),
+    deleteAll: () => ipcRenderer.invoke('backup:deleteAll'),
+    openFolder: () => ipcRenderer.invoke('backup:openFolder'),
+  },
+
 })

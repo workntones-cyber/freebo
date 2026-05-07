@@ -58,6 +58,14 @@ export interface IApi {
     getDepreciation: (assetId: number) => Promise<unknown[]>
     registerDepreciation: (data: unknown) => Promise<number>
   }
+  backup: {
+    create: (manual: boolean) => Promise<{ fileName: string; path: string; date: string; type: string; size: number }>
+    getHistory: () => Promise<{ fileName: string; path: string; date: string; type: string; size: number }[]>
+    restore: (filePath: string) => Promise<void>
+    delete: (fileName: string) => Promise<void>
+    deleteAll: () => Promise<void>
+    openFolder: () => Promise<void>
+  }
 }
 
 declare global {
