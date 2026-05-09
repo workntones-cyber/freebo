@@ -32,7 +32,7 @@ const ASSET_PRESETS = [
   { category: 'カスタム',                   usefulLife: 0, depreciationRate: 0 },
 ]
 
-export default function FixedAssets({ year }: { year: number }): JSX.Element {
+export default function FixedAssets({ year, showToast }: { year: number; showToast: (msg: string, type?: 'success' | 'error' | 'info') => void }): JSX.Element {
   const currentYear = year
   const [assets, setAssets] = useState<FixedAsset[]>([])
   const [showForm, setShowForm] = useState(false)
@@ -76,6 +76,7 @@ export default function FixedAssets({ year }: { year: number }): JSX.Element {
     setCategory(ASSET_PRESETS[0].category)
     setUsefulLife(ASSET_PRESETS[0].usefulLife)
     setDepreciationRate(ASSET_PRESETS[0].depreciationRate)
+    showToast('固定資産を登録しました')
     load()
   }
 
@@ -89,6 +90,7 @@ export default function FixedAssets({ year }: { year: number }): JSX.Element {
     if (!confirm('この固定資産を削除しますか？\n\n※関連する減価償却仕訳も自動で削除されます。\n※この操作は取り消せません。')) return
     await window.api.assets.delete(id)
     setSelectedAsset(null)
+    showToast('固定資産を削除しました', 'info')
     load()
   }
 
@@ -98,6 +100,7 @@ export default function FixedAssets({ year }: { year: number }): JSX.Element {
     try {
       const amount = calcDepreciation(selectedAsset, year)
       await window.api.assets.registerDepreciation({ assetId: selectedAsset.id, year, amount })
+      showToast('減価償却仕訳を登録しました')
       const records = await window.api.assets.getDepreciation(selectedAsset.id)
       setDeprecRecords(records as DepreciationRecord[])
     } catch (e: unknown) {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-export default function Settings(): JSX.Element {
+export default function Settings({ showToast }: { showToast: (msg: string, type?: 'success' | 'error' | 'info') => void }): JSX.Element {
   const [form, setForm] = useState({
     businessName: '', ownerName: '', openDate: '',
     postalCode: '', address: '', phone: '', email: '',
@@ -23,8 +23,7 @@ export default function Settings(): JSX.Element {
 
   const handleSave = async () => {
     for (const [k, v] of Object.entries(form)) await window.api.settings.set(k, v)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    showToast('設定を保存しました')
   }
 
   const handleReset = async () => {
@@ -184,7 +183,6 @@ export default function Settings(): JSX.Element {
       </div>
 
       <button className="btn btn-primary" onClick={handleSave}>保存する</button>
-      {saved && <span style={{ marginLeft: 12, color: 'var(--accent2)' }}>✅ 保存しました</span>}
 
 {/* デンジャーゾーン */}
       <div className="card" style={{ marginTop: 32, border: '1px solid var(--danger)' }}>

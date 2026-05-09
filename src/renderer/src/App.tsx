@@ -14,6 +14,7 @@ import TaxSimulator from './pages/TaxSimulator'
 import FixedAssets  from './pages/FixedAssets'
 import Receipts     from './pages/Receipts'
 import Backup       from './pages/Backup'
+import Toast, { useToast, ToastMessage } from './components/Toast'
 
 type Page = 'dashboard' | 'journal' | 'journal-form' | 'invoice' | 'invoice-form' | 'reports' | 'ledger' | 'etax' | 'tax' | 'fixed-assets' | 'receipts' | 'settings' | 'backup'
 type Theme = 'dark' | 'light'
@@ -25,6 +26,7 @@ export default function App(): JSX.Element {
   })
   const [year, setYear]   = useState(new Date().getFullYear())
   const [years, setYears] = useState<number[]>([new Date().getFullYear()])
+  const { toasts, show: showToast, remove: removeToast } = useToast()
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -40,18 +42,18 @@ export default function App(): JSX.Element {
   const renderPage = () => {
     switch (page) {
       case 'dashboard':    return <Dashboard year={year} />
-      case 'journal':      return <Journal onNew={() => setPage('journal-form')} year={year} />
-      case 'journal-form': return <JournalForm onSaved={() => setPage('journal')} />
-      case 'invoice':      return <Invoice onNew={() => setPage('invoice-form')} />
-      case 'invoice-form': return <InvoiceForm onSaved={() => setPage('invoice')} onCancel={() => setPage('invoice')} />
-      case 'reports':      return <Reports year={year} />
-      case 'ledger':       return <Ledger year={year} />
+      case 'journal':      return <Journal onNew={() => setPage('journal-form')} year={year} showToast={showToast} />
+      case 'journal-form': return <JournalForm onSaved={() => { setPage('journal'); showToast('仕訳を保存しました') }} />
+      case 'invoice':      return <Invoice onNew={() => setPage('invoice-form')} showToast={showToast} />
+      case 'invoice-form': return <InvoiceForm onSaved={() => { setPage('invoice'); showToast('請求書を保存しました') }} onCancel={() => setPage('invoice')} />
+      case 'reports':      return <Reports year={year} showToast={showToast} />
+      case 'ledger':       return <Ledger year={year} showToast={showToast} />
       case 'etax':         return <EtaxGuide year={year} />
       case 'tax':          return <TaxSimulator year={year} />
-      case 'fixed-assets': return <FixedAssets year={year} />
+      case 'fixed-assets': return <FixedAssets year={year} showToast={showToast} />
       case 'receipts':     return <Receipts year={year} />
-      case 'settings':     return <Settings />
-      case 'backup':       return <Backup />
+      case 'settings':     return <Settings showToast={showToast} />
+      case 'backup':       return <Backup showToast={showToast} />
     }
   }
 
@@ -67,6 +69,7 @@ export default function App(): JSX.Element {
         onYearChange={setYear}
       />
       <main className="main-content">{renderPage()}</main>
+      <Toast toasts={toasts} onRemove={removeToast} />
     </div>
   )
 }

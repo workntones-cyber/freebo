@@ -8,7 +8,7 @@ interface BackupEntry {
   size: number
 }
 
-export default function Backup(): JSX.Element {
+export default function Backup({ showToast }: { showToast: (msg: string, type?: 'success' | 'error' | 'info') => void }): JSX.Element {
   const [history, setHistory]           = useState<BackupEntry[]>([])
   const [autoEnabled, setAutoEnabled]   = useState(false)
   const [autoDay, setAutoDay]           = useState(1)
@@ -41,6 +41,7 @@ export default function Backup(): JSX.Element {
     try {
       await window.api.backup.create(true)
       await loadHistory()
+      showToast('バックアップを作成しました')
     } finally {
       setCreating(false)
       setLocking(false)
@@ -50,12 +51,13 @@ export default function Backup(): JSX.Element {
   const handleAutoSave = async () => {
     await window.api.settings.set('backupAutoEnabled', String(autoEnabled))
     await window.api.settings.set('backupAutoDay', String(autoDay))
-    alert('自動バックアップの設定を保存しました。')
+    showToast('自動バックアップの設定を保存しました')
   }
 
   const handleDelete = async (entry: BackupEntry) => {
     if (!confirm(`バックアップ「${entry.fileName}」を削除しますか？`)) return
     await window.api.backup.delete(entry.fileName)
+    showToast('バックアップを削除しました', 'info')
     loadHistory()
   }
 

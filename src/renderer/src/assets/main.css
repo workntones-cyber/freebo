@@ -108,3 +108,8 @@ body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-
 .summary-card .value.income  { color: var(--accent2); }
 .summary-card .value.expense { color: var(--danger); }
 .summary-card .value.profit  { color: var(--accent); }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);   opacity: 1; }
+}

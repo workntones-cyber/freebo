@@ -27,7 +27,7 @@ interface InvoiceDetail {
 
 interface EditItem { description: string; quantity: number; unitPrice: string }
 
-export default function Invoice({ onNew }: { onNew: () => void }): JSX.Element {
+export default function Invoice({ onNew, showToast }: { onNew: () => void; showToast: (msg: string, type?: 'success' | 'error' | 'info') => void }): JSX.Element {
   const year = new Date().getFullYear()
   const [rows, setRows]             = useState<InvoiceRow[]>([])
   const [exporting, setExporting]   = useState<number | null>(null)
@@ -42,6 +42,7 @@ export default function Invoice({ onNew }: { onNew: () => void }): JSX.Element {
   const handleDelete = async (id: number, invoiceNumber: string) => {
     if (!confirm(`請求書「${invoiceNumber}」を削除しますか？\n\n※この操作は取り消せません。\n※PDFが出力済みの場合、ファイル名の先頭に「[削除済み]」が付きます。`)) return
     await window.api.invoices.delete(id)
+    showToast('請求書を削除しました', 'info')
     load()
   }
 
@@ -78,6 +79,7 @@ export default function Invoice({ onNew }: { onNew: () => void }): JSX.Element {
         }))
       })
       setEditData(null)
+      showToast('請求書を更新しました')
       load()
     } finally {
       setSaving(false)
@@ -98,6 +100,7 @@ export default function Invoice({ onNew }: { onNew: () => void }): JSX.Element {
       const fileName = `請求書_${row.invoice_number}_${row.client_name}.pdf`
       await window.api.pdf.export(fileName, year, 'invoice', detail)
       await window.api.invoices.updateStatus(row.id, 'sent')
+      showToast('PDFを生成して送付済みにしました') 
       load()
     } finally {
       setExporting(null)
@@ -107,6 +110,7 @@ export default function Invoice({ onNew }: { onNew: () => void }): JSX.Element {
   // 入金済みにする
   const handlePaid = async (id: number) => {
     await window.api.invoices.updateStatus(id, 'paid')
+    showToast('入金済みにしました')
     load()
   }
 

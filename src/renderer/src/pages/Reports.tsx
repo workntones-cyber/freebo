@@ -12,7 +12,7 @@ interface OwnerLoanCheck {
   personalPayments: { code: string; name: string; total: number }[]
 }
 
-export default function Reports({ year }: { year: number }): JSX.Element {
+export default function Reports({ year, showToast }: { year: number; showToast: (msg: string, type?: 'success' | 'error' | 'info') => void }): JSX.Element {
   const [tab, setTab] = useState<Tab>('pl')
   const [plRows, setPlRows] = useState<PLRow[]>([])
   const [bsRows, setBsRows] = useState<BSRow[]>([])
@@ -55,6 +55,7 @@ export default function Reports({ year }: { year: number }): JSX.Element {
       } else {
         await window.api.pdf.export(`貸借対照表_${year}.pdf`, year, 'bs', bsRows)
       }
+      showToast('PDFを保存しました')
     } finally {
       setExporting(false)
     }
@@ -69,6 +70,7 @@ export default function Reports({ year }: { year: number }): JSX.Element {
       })
       setOwnerLoanModal(false)
       setOwnerLoan(null)
+      showToast('事業主借を自動登録しました')
       // 仕訳帳を再読み込み
       window.api.reports.pl(year).then(d => setPlRows(d as PLRow[]))
       window.api.reports.bs(year).then(d => setBsRows(d as BSRow[]))

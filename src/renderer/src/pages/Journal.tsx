@@ -51,7 +51,7 @@ const helpTexts: Record<string, { title: string; description: string; example?: 
   credit: { title: '貸方（かしかた）', description: 'お金の出どころ・収益の発生・負債の増加を記録する右側の欄です。', example: '売上が発生した → 貸方に「売上高」' },
 }
 
-export default function Journal({ onNew, year }: { onNew: () => void; year: number }): JSX.Element {
+export default function Journal({ onNew, year, showToast }: { onNew: () => void; year: number; showToast: (msg: string, type?: 'success' | 'error' | 'info') => void }): JSX.Element {
   const [rows, setRows] = useState<JournalRow[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
   const [settleForm, setSettleForm] = useState<SettleForm | null>(null)
@@ -69,8 +69,9 @@ export default function Journal({ onNew, year }: { onNew: () => void; year: numb
   }, [])
 
   const handleDelete = async (id: number) => {
-    if (!confirm('この仕訳を削除しますか？')) return
+    if (!confirm('削除しますか？')) return
     await window.api.journals.delete(id)
+    showToast('仕訳を削除しました', 'info')
     load()
   }
 
@@ -109,6 +110,7 @@ export default function Journal({ onNew, year }: { onNew: () => void; year: numb
       lines: editLines.map(l => ({ type: l.type, accountId: Number(l.accountId), amount: Number(l.amount) }))
     })
     setEditData(null)
+    showToast('仕訳を更新しました')
     load()
   }
 
@@ -149,6 +151,7 @@ export default function Journal({ onNew, year }: { onNew: () => void; year: numb
         settledAmount: Number(settleForm.settledAmount), originalAmount: settleForm.originalJPY, exchangeRate: settleForm.rate,
       })
       setSettleForm(null)
+      showToast('引き落とし仕訳を生成しました')
       load()
     } finally {
       setSettling(false)
