@@ -16,6 +16,7 @@ export interface IApi {
     delete: (id: number) => Promise<void>
     settle: (data: unknown) => Promise<number>
     update: (data: unknown) => Promise<void>
+    getYears: () => Promise<number[]>
   }
   exchange: {
     getRate: (date: string) => Promise<{ rate: number; source: string; date: string } | null>

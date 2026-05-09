@@ -20,8 +20,7 @@ const categoryLabel: Record<string, string> = {
   asset: '資産', liability: '負債', equity: '資本', revenue: '収益', expense: '費用'
 }
 
-export default function Ledger(): JSX.Element {
-  const year = new Date().getFullYear()
+export default function Ledger({ year }: { year: number }): JSX.Element {
   const [accounts, setAccounts] = useState<LedgerAccount[]>([])
   const [selected, setSelected] = useState<number | null>(null)
   const [exporting, setExporting] = useState(false)

@@ -20,18 +20,37 @@ interface Props {
   onChange: (page: string) => void
   theme: 'dark' | 'light'
   onToggleTheme: () => void
+  year: number
+  years: number[]
+  onYearChange: (year: number) => void
 }
-
-export default function Sidebar({ current, onChange, theme, onToggleTheme }: Props): JSX.Element {
+export default function Sidebar({ current, onChange, theme, onToggleTheme, year, years, onYearChange }: Props): JSX.Element {
   return (
     <nav style={{
       width: 'var(--sidebar-w)', background: 'var(--bg2)', borderRight: '1px solid var(--border)',
       display: 'flex', flexDirection: 'column', padding: '24px 0', flexShrink: 0
     }}>
       {/* ロゴ */}
-      <div style={{ padding: '0 20px 24px', borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
+      <div style={{ padding: '0 20px 16px', borderBottom: '1px solid var(--border)', marginBottom: 16 }}>
         <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--accent)' }}>freebo</div>
         <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>フリーランス会計</div>
+        {/* 年度セレクター */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10 }}>
+          <span style={{ fontSize: 11, color: 'var(--text2)' }}>年度：</span>
+          <select
+            value={year}
+            onChange={e => onYearChange(parseInt(e.target.value))}
+            style={{
+              fontSize: 12, padding: '3px 6px', borderRadius: 'var(--radius)',
+              border: '1px solid var(--border)', background: 'var(--bg3)',
+              color: 'var(--text)', cursor: 'pointer', flex: 1
+            }}
+          >
+            {years.map(y => (
+              <option key={y} value={y}>{y}年</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* ナビ */}

@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('api', {
     // 仕訳追加分
     settle: (data: unknown) => ipcRenderer.invoke('journals:settle', data),
     update: (data: unknown) => ipcRenderer.invoke('journals:update', data),
+    getYears: () => ipcRenderer.invoke('journals:getYears'),
   },
 
   // 請求書

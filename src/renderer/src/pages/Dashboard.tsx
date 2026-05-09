@@ -42,8 +42,7 @@ function getDeadlines(): Deadline[] {
     .slice(0, 4)
 }
 
-export default function Dashboard(): JSX.Element {
-  const year = new Date().getFullYear()
+export default function Dashboard({ year }: { year: number }): JSX.Element {
   const [rows, setRows] = useState<PLRow[]>([])
   const deadlines = getDeadlines()
 
@@ -59,9 +58,10 @@ export default function Dashboard(): JSX.Element {
 
   return (
     <div>
+
       <div className="page-header">
         <h1 className="page-title">ダッシュボード</h1>
-        <span style={{ color: 'var(--text2)' }}>{year}年</span>
+        <span style={{ color: 'var(--text2)', fontSize: 13 }}>{year}年</span>
       </div>
 
       {/* 期限通知 */}

@@ -12,8 +12,7 @@ interface OwnerLoanCheck {
   personalPayments: { code: string; name: string; total: number }[]
 }
 
-export default function Reports(): JSX.Element {
-  const year = new Date().getFullYear()
+export default function Reports({ year }: { year: number }): JSX.Element {
   const [tab, setTab] = useState<Tab>('pl')
   const [plRows, setPlRows] = useState<PLRow[]>([])
   const [bsRows, setBsRows] = useState<BSRow[]>([])

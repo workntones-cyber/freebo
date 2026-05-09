@@ -15,8 +15,7 @@ interface CheckItem {
   done: boolean
 }
 
-export default function EtaxGuide(): JSX.Element {
-  const year = new Date().getFullYear()
+export default function EtaxGuide({ year }: { year: number }): JSX.Element {
   const [guide, setGuide] = useState<EtaxGuide | null>(null)
   const [checks, setChecks] = useState<CheckItem[]>([
     { id: 'mynumber', label: 'マイナンバーカード or e-Tax ID・パスワードを用意した', done: false },
@@ -42,8 +41,8 @@ export default function EtaxGuide(): JSX.Element {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">e-Tax 転記ガイド</h1>
-        <span style={{ color: 'var(--text2)' }}>{year}年分</span>
+        <h1 className="page-title">e-Tax ガイド</h1>
+        <span style={{ color: 'var(--text2)', fontSize: 13 }}>{year}年</span>
       </div>
 
       {/* 準備チェックリスト */}

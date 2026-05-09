@@ -730,7 +730,26 @@ ipcMain.handle('assets:create', (_, data: {
 })
 
 ipcMain.handle('assets:delete', (_, id: number) => {
-  getDb().prepare('UPDATE fixed_assets SET is_active = 0 WHERE id = ?').run(id)
+  const db = getDb()
+
+  const del = db.transaction(() => {
+    // 償却記録に紐づく仕訳IDを取得
+    const records = db.prepare('SELECT journal_id FROM depreciation_records WHERE asset_id = ? AND journal_id IS NOT NULL').all(id) as { journal_id: number }[]
+
+    // 仕訳明細・仕訳を削除
+    for (const record of records) {
+      db.prepare('DELETE FROM journal_lines WHERE journal_id = ?').run(record.journal_id)
+      db.prepare('DELETE FROM journals WHERE id = ?').run(record.journal_id)
+    }
+
+    // 償却記録を削除
+    db.prepare('DELETE FROM depreciation_records WHERE asset_id = ?').run(id)
+
+    // 固定資産を削除（非表示ではなく完全削除）
+    db.prepare('DELETE FROM fixed_assets WHERE id = ?').run(id)
+  })
+
+  del()
 })
 
 ipcMain.handle('assets:getDepreciation', (_, assetId: number) => {
@@ -777,9 +796,9 @@ ipcMain.handle('assets:registerDepreciation', (_, {
     // 借方：減価償却費
     db.prepare(`INSERT INTO journal_lines (journal_id, type, account_id, amount) VALUES (?, 'debit', ?, ?)`).run(journalId, expenseAccountId, amount)
 
-    // 貸方：固定資産（資産を直接減らす）
-    const assetAccount = db.prepare(`SELECT id FROM accounts WHERE name LIKE '%工具%' OR name LIKE '%備品%' OR code='1040'`).get() as { id: number } | undefined
-    const creditAccountId = assetAccount?.id ?? expenseAccountId
+    // 貸方：工具器具備品（固定資産）
+    const assetAccount = db.prepare(`SELECT id FROM accounts WHERE code='1050'`).get() as { id: number } | undefined
+    const creditAccountId = assetAccount?.id ?? (db.prepare(`SELECT id FROM accounts WHERE code='5190'`).get() as { id: number }).id
     db.prepare(`INSERT INTO journal_lines (journal_id, type, account_id, amount) VALUES (?, 'credit', ?, ?)`).run(journalId, creditAccountId, amount)
 
     // 償却記録を保存
@@ -1317,6 +1336,19 @@ ipcMain.handle('backup:openFolder', () => {
   shell.openPath(backupDir)
 })
 
+// 年度一覧取得
+ipcMain.handle('journals:getYears', () => {
+  const rows = getDb().prepare(`
+    SELECT DISTINCT strftime('%Y', date) as year
+    FROM journals
+    ORDER BY year DESC
+  `).all() as { year: string }[]
+  const years = rows.map(r => parseInt(r.year))
+  // 当年が含まれていない場合も追加
+  const currentYear = new Date().getFullYear()
+  if (!years.includes(currentYear)) years.unshift(currentYear)
+  return years
+})
 
 
 // ==============================

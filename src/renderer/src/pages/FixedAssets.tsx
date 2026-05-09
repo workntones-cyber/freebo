@@ -32,8 +32,8 @@ const ASSET_PRESETS = [
   { category: 'カスタム',                   usefulLife: 0, depreciationRate: 0 },
 ]
 
-export default function FixedAssets(): JSX.Element {
-  const currentYear = new Date().getFullYear()
+export default function FixedAssets({ year }: { year: number }): JSX.Element {
+  const currentYear = year
   const [assets, setAssets] = useState<FixedAsset[]>([])
   const [showForm, setShowForm] = useState(false)
   const [selectedAsset, setSelectedAsset] = useState<FixedAsset | null>(null)
@@ -86,7 +86,7 @@ export default function FixedAssets(): JSX.Element {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm('この固定資産を削除しますか？')) return
+    if (!confirm('この固定資産を削除しますか？\n\n※関連する減価償却仕訳も自動で削除されます。\n※この操作は取り消せません。')) return
     await window.api.assets.delete(id)
     setSelectedAsset(null)
     load()

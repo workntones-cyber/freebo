@@ -51,8 +51,7 @@ const helpTexts: Record<string, { title: string; description: string; example?: 
   credit: { title: '貸方（かしかた）', description: 'お金の出どころ・収益の発生・負債の増加を記録する右側の欄です。', example: '売上が発生した → 貸方に「売上高」' },
 }
 
-export default function Journal({ onNew }: { onNew: () => void }): JSX.Element {
-  const year = new Date().getFullYear()
+export default function Journal({ onNew, year }: { onNew: () => void; year: number }): JSX.Element {
   const [rows, setRows] = useState<JournalRow[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
   const [settleForm, setSettleForm] = useState<SettleForm | null>(null)

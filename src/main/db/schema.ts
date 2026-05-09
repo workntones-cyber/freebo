@@ -106,4 +106,7 @@ export const defaultAccounts = [
   { code: '5070', name: '外注費',     category: 'expense',  isSystem: false, description: '他のフリーランスへの発注費用。' },
   { code: '5080', name: '地代家賃',   category: 'expense',  isSystem: false, description: '自宅兼事務所の家賃を事業用に按分した金額。' },
   { code: '5090', name: '水道光熱費', category: 'expense',  isSystem: false, description: '電気・水道代などを事業用に按分した金額。' },
+  { code: '5190', name: '雑費',       category: 'expense',  isSystem: false, description: 'どれにも当てはまらない費用' },
+  { code: '5195', name: '減価償却費', category: 'expense',  isSystem: false, description: '固定資産の減価償却費' },
+  { code: '5196', name: '為替差損',   category: 'expense',  isSystem: false, description: '外貨建て取引の為替差損' },
 ]

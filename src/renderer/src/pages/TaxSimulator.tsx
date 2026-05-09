@@ -27,8 +27,7 @@ function calcTax(taxableIncome: number): number {
   return Math.floor(taxableIncome * bracket.rate - bracket.deduction)
 }
 
-export default function TaxSimulator(): JSX.Element {
-  const year = new Date().getFullYear()
+export default function TaxSimulator({ year }: { year: number }): JSX.Element {
   const [data, setData] = useState<SimData | null>(null)
   const [customRevenue, setCustomRevenue] = useState<string>('')
   const [useCustom, setUseCustom] = useState(false)
@@ -95,7 +94,7 @@ export default function TaxSimulator(): JSX.Element {
     <div>
       <div className="page-header">
         <h1 className="page-title">税額シミュレーション</h1>
-        <span style={{ color: 'var(--text2)' }}>{year}年分（概算）</span>
+        <span style={{ color: 'var(--text2)', fontSize: 13 }}>{year}年分（概算）</span>
       </div>
 
       <p style={{ color: 'var(--text2)', fontSize: 13, marginBottom: 24 }}>

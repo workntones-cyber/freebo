@@ -17,7 +17,7 @@ const paymentLabels: Record<string, string> = {
   bank: '🏦 銀行振込',
 }
 
-export default function Receipts(): JSX.Element {
+export default function Receipts({ year }: { year: number }): JSX.Element {
   const [rows, setRows] = useState<ReceiptRow[]>([])
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<string>('all')
@@ -31,7 +31,8 @@ export default function Receipts(): JSX.Element {
       r.description.includes(search) ||
       r.expense_name?.includes(search)
     const matchFilter = filter === 'all' || r.payment_method === filter
-    return matchSearch && matchFilter
+    const matchYear = r.date.startsWith(String(year))
+    return matchSearch && matchFilter && matchYear
   })
 
   const totalAmount = filtered.reduce((s, r) => s + r.amount, 0)
