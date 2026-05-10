@@ -104,8 +104,15 @@ export default function Reports({ year, showToast }: { year: number; showToast: 
         <h1 className="page-title">帳票</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ color: 'var(--text2)' }}>{year}年</span>
+          <button className="btn btn-ghost" onClick={async () => {
+            if (tab === 'pl') {
+              await window.api.csv.export('pl', year, plRows)
+            } else {
+              await window.api.csv.export('bs', year, bsRows)
+            }
+          }}>📥 CSV出力</button>
           <button className="btn btn-primary" onClick={handleExport} disabled={exporting}>
-            {exporting ? '生成中...' : '📄 PDFで保存'}
+            {exporting ? '生成中...' : '🖨 PDFで保存'}
           </button>
         </div>
       </div>

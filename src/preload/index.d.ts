@@ -67,6 +67,9 @@ export interface IApi {
     deleteAll: () => Promise<void>
     openFolder: () => Promise<void>
   }
+  csv: {
+    export: (type: string, year: number, data: unknown[]) => Promise<string | null>
+  }
 }
 
 declare global {

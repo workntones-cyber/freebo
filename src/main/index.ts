@@ -1215,6 +1215,91 @@ function generatePrintHtml(type: string, data: unknown, year: number): string {
   return `<!DOCTYPE html><html><head><meta charset="utf-8">${baseStyle}</head><body><p>不明なタイプです</p></body></html>`
 }
 
+// CSV出力
+ipcMain.handle('csv:export', async (_, { type, year, data }: {
+  type: 'journals' | 'pl' | 'bs'
+  year: number
+  data: unknown[]
+}) => {
+  const { dialog } = await import('electron')
+  const fileNames = {
+    journals: `仕訳帳_${year}.csv`,
+    pl: `損益計算書_${year}.csv`,
+    bs: `貸借対照表_${year}.csv`,
+  }
+
+  const result = await dialog.showSaveDialog({
+    defaultPath: fileNames[type],
+    filters: [{ name: 'CSV', extensions: ['csv'] }]
+  })
+
+  if (result.canceled || !result.filePath) return null
+
+  let csv = ''
+
+  if (type === 'journals') {
+    const rows = data as {
+      date: string
+      description: string
+      lines_summary: string
+      payment_method: string
+      memo: string
+      currency: string
+    }[]
+    csv = '\uFEFF' // BOM（Excelで文字化けしないよう）
+    csv += '日付,摘要,借方科目,借方金額,貸方科目,貸方金額,支払方法,通貨,メモ\n'
+    for (const row of rows) {
+      const lines = (row.lines_summary ?? '').split(',')
+      const debits  = lines.filter(l => l.startsWith('debit:'))
+      const credits = lines.filter(l => l.startsWith('credit:'))
+      const maxLen = Math.max(debits.length, credits.length)
+      for (let i = 0; i < maxLen; i++) {
+        const debit  = debits[i]  ? debits[i].split(':')  : ['', '', '']
+        const credit = credits[i] ? credits[i].split(':') : ['', '', '']
+        const debitName   = debit[1]  ?? ''
+        const debitAmount = debit[2]  ?? ''
+        const creditName  = credit[1] ?? ''
+        const creditAmount = credit[2] ?? ''
+        const paymentLabel: Record<string, string> = {
+          cash: '現金', credit: 'クレジットカード',
+          electronic: '電子決済', bank: '銀行振込'
+        }
+        csv += [
+          i === 0 ? row.date : '',
+          i === 0 ? `"${row.description}"` : '',
+          `"${debitName}"`,
+          debitAmount,
+          `"${creditName}"`,
+          creditAmount,
+          i === 0 ? (paymentLabel[row.payment_method] ?? row.payment_method) : '',
+          i === 0 ? (row.currency ?? 'JPY') : '',
+          i === 0 ? `"${row.memo ?? ''}"` : '',
+        ].join(',') + '\n'
+      }
+    }
+  } else if (type === 'pl') {
+    const rows = data as { account_name: string; category: string; amount: number }[]
+    csv = '\uFEFF'
+    csv += 'カテゴリ,勘定科目,金額\n'
+    for (const row of rows) {
+      const catLabel: Record<string, string> = { revenue: '収益', expense: '費用' }
+      csv += [catLabel[row.category] ?? row.category, `"${row.account_name}"`, row.amount].join(',') + '\n'
+    }
+  } else if (type === 'bs') {
+    const rows = data as { account_name: string; category: string; balance: number }[]
+    csv = '\uFEFF'
+    csv += 'カテゴリ,勘定科目,残高\n'
+    for (const row of rows) {
+      const catLabel: Record<string, string> = { asset: '資産', liability: '負債', equity: '資本' }
+      csv += [catLabel[row.category] ?? row.category, `"${row.account_name}"`, row.balance].join(',') + '\n'
+    }
+  }
+
+  fs.writeFileSync(result.filePath, csv, 'utf-8')
+  shell.openPath(path.dirname(result.filePath))
+  return result.filePath
+})
+
 // ==============================
 // バックアップ
 // ==============================

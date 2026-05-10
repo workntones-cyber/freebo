@@ -188,6 +188,9 @@ export default function Journal({ onNew, year, showToast }: { onNew: () => void;
             </span>
           )}
           <span style={{ color: 'var(--text2)' }}>{year}年</span>
+          <button className="btn btn-ghost" onClick={async () => {
+            await window.api.csv.export('journals', year, rows)
+          }}>📥 CSV出力</button>
           <button className="btn btn-primary" onClick={onNew}>＋ 仕訳入力</button>
         </div>
       </div>

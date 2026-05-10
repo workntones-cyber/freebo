@@ -92,5 +92,9 @@ contextBridge.exposeInMainWorld('api', {
     deleteAll: () => ipcRenderer.invoke('backup:deleteAll'),
     openFolder: () => ipcRenderer.invoke('backup:openFolder'),
   },
+  // CSV
+  csv: {
+    export: (type: string, year: number, data: unknown[]) => ipcRenderer.invoke('csv:export', { type, year, data }),
+  },
 
 })
