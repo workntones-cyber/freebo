@@ -15,6 +15,7 @@ import FixedAssets  from './pages/FixedAssets'
 import Receipts     from './pages/Receipts'
 import Backup       from './pages/Backup'
 import Toast, { useToast, ToastMessage } from './components/Toast'
+import { createContext, useContext } from 'react'
 
 type Page = 'dashboard' | 'journal' | 'journal-form' | 'invoice' | 'invoice-form' | 'reports' | 'ledger' | 'etax' | 'tax' | 'fixed-assets' | 'receipts' | 'settings' | 'backup'
 type Theme = 'dark' | 'light'
@@ -52,24 +53,97 @@ export default function App(): JSX.Element {
       case 'tax':          return <TaxSimulator year={year} />
       case 'fixed-assets': return <FixedAssets year={year} showToast={showToast} />
       case 'receipts':     return <Receipts year={year} />
-      case 'settings':     return <Settings showToast={showToast} />
+      case 'settings': return <Settings showToast={showToast} onSaved={loadSettings} />
       case 'backup':       return <Backup showToast={showToast} />
     }
   }
 
+  const [appSettings, setAppSettings] = useState<AppSettings>({
+    taxMode: 'exempt',
+    declarationType: 'blue_65',
+    withholding: 'false',
+    invoiceRegistrationNumber: '',
+    businessName: '',
+    ownerName: '',
+    postalCode: '',
+    address: '',
+    phone: '',
+    email: '',
+    bankName: '',
+    bankBranch: '',
+    bankType: '普通',
+    bankNumber: '',
+    bankHolder: '',
+    standardTaxRate: '10',
+    reducedTaxRate: '8',
+  })
+
+  const loadSettings = () => {
+    window.api.settings.getAll().then(s => {
+      setAppSettings(prev => ({ ...prev, ...s }))
+    })
+  }
+
+  useEffect(() => {
+    loadSettings()
+  }, [])
+
   return (
-    <div className="layout">
-      <Sidebar
-        current={page}
-        onChange={p => setPage(p as Page)}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        year={year}
-        years={years}
-        onYearChange={setYear}
-      />
-      <main className="main-content">{renderPage()}</main>
-      <Toast toasts={toasts} onRemove={removeToast} />
-    </div>
+    <SettingsContext.Provider value={appSettings}>
+      <div className="layout">
+        <Sidebar
+          current={page}
+          onChange={p => setPage(p as Page)}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          year={year}
+          years={years}
+          onYearChange={setYear}
+        />
+        <main className="main-content">{renderPage()}</main>
+        <Toast toasts={toasts} onRemove={removeToast} />
+      </div>
+    </SettingsContext.Provider>
   )
 }
+export interface AppSettings {
+  taxMode: string
+  declarationType: string
+  withholding: string
+  invoiceRegistrationNumber: string
+  businessName: string
+  ownerName: string
+  postalCode: string
+  address: string
+  phone: string
+  email: string
+  bankName: string
+  bankBranch: string
+  bankType: string
+  bankNumber: string
+  bankHolder: string
+  standardTaxRate: string
+  reducedTaxRate: string
+}
+
+export const SettingsContext = createContext<AppSettings>({
+  taxMode: 'exempt',
+  declarationType: 'blue_65',
+  withholding: 'false',
+  invoiceRegistrationNumber: '',
+  businessName: '',
+  ownerName: '',
+  postalCode: '',
+  address: '',
+  phone: '',
+  email: '',
+  bankName: '',
+  bankBranch: '',
+  bankType: '普通',
+  bankNumber: '',
+  bankHolder: '',
+  standardTaxRate: '10',
+  reducedTaxRate: '8',
+})
+
+export const useAppSettings = () => useContext(SettingsContext)

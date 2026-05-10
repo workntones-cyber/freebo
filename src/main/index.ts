@@ -363,8 +363,14 @@ ipcMain.handle('reports:pl', (_, year: number) => {
 ipcMain.handle('reports:bs', (_, year: number) => {
   return getDb().prepare(`
     SELECT a.name as account_name, a.category, a.code,
-      SUM(CASE WHEN jl.type = 'debit'  THEN jl.amount ELSE 0 END) -
-      SUM(CASE WHEN jl.type = 'credit' THEN jl.amount ELSE 0 END) as balance
+      CASE
+        WHEN a.category = 'asset' THEN
+          SUM(CASE WHEN jl.type = 'debit'  THEN jl.amount ELSE 0 END) -
+          SUM(CASE WHEN jl.type = 'credit' THEN jl.amount ELSE 0 END)
+        ELSE
+          SUM(CASE WHEN jl.type = 'credit' THEN jl.amount ELSE 0 END) -
+          SUM(CASE WHEN jl.type = 'debit'  THEN jl.amount ELSE 0 END)
+      END as balance
     FROM journal_lines jl
     JOIN accounts a ON a.id = jl.account_id
     JOIN journals j ON j.id = jl.journal_id

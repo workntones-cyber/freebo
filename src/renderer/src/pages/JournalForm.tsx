@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import HelpPanel from '../components/HelpPanel'
+import { useAppSettings } from '../App'
 
 interface Account { id: number; code: string; name: string; category: string; description: string }
 interface Line { type: 'debit' | 'credit'; accountId: number; amount: string }
@@ -68,6 +69,13 @@ const helpTexts: Record<string, { title: string; description: string; example?: 
 }
 
 export default function JournalForm({ onSaved }: { onSaved: () => void }): JSX.Element {
+  const settings = useAppSettings()
+  const isTaxable = settings.taxMode !== 'exempt'
+  const standardRate = parseInt(settings.standardTaxRate ?? '10')
+  const reducedRate  = parseInt(settings.reducedTaxRate ?? '8')
+  const [taxRate, setTaxRate] = useState<number | null>(null)
+  const effectiveTaxRate = taxRate ?? standardRate
+
   const [mode, setMode]           = useState<Mode>('simple')
   const [entryType, setEntryType] = useState<EntryType>('expense')
   const [accounts, setAccounts]   = useState<Account[]>([])
@@ -148,27 +156,31 @@ export default function JournalForm({ onSaved }: { onSaved: () => void }): JSX.E
     }
     setSimpleAmount(''); setSimpleOriginal(''); setSimpleMemo('')
     setSimpleCurrency('JPY'); setSimpleRate(null); setSimpleError('')
+    setTaxRate(null)
   }, [entryType])
 
   const simpleJPY = simpleCurrency === 'USD' && simpleOriginal && simpleRate
     ? Math.floor(parseFloat(simpleOriginal) * simpleRate.rate)
     : Number(simpleAmount) || 0
 
+  const taxAmount = isTaxable && taxRate !== null
+    ? Math.floor(simpleJPY * effectiveTaxRate / (100 + effectiveTaxRate))
+    : 0
+  const preTaxAmount = simpleJPY - taxAmount
+
+  // 消費税勘定科目（プレビューでも使用）
+  const taxAccountCode = entryType === 'expense' ? '1060' : '2025'
+  const taxAccount = isTaxable && taxRate !== null
+    ? accounts.find(a => a.code === taxAccountCode)
+    : null
+
   const handleSimpleSave = async () => {
     const amount = simpleJPY
     if (!simpleDate || !amount) { setSimpleError('日付と金額は必須です'); return }
 
-    let debitCode: string
-    let creditCode: string
-
-    if (entryType === 'expense') {
-      debitCode  = simpleCategory
-      creditCode = paymentToCredit[simplePayment]
-    } else {
-      debitCode  = incomeToDebit[simpleReceipt]
-      const selectedIncomeCat = incomeCategories.find(c => c.label === simpleIncomeCategoryLabel)
-      creditCode = selectedIncomeCat?.code ?? '4010'
-    }
+    const debitCode  = entryType === 'expense' ? simpleCategory : incomeToDebit[simpleReceipt]
+    const incomeCat  = incomeCategories.find(c => c.label === simpleIncomeCategoryLabel)
+    const creditCode = entryType === 'expense' ? paymentToCredit[simplePayment] : (incomeCat?.code ?? '4010')
 
     const debitAccount  = accounts.find(a => a.code === debitCode)
     const creditAccount = accounts.find(a => a.code === creditCode)
@@ -178,7 +190,7 @@ export default function JournalForm({ onSaved }: { onSaved: () => void }): JSX.E
 
     const cat = entryType === 'expense'
       ? expenseCategories.find(c => c.code === simpleCategory)
-      : incomeCategories.find(c => c.code === simpleIncomeCategoryLabel)
+      : incomeCategories.find(c => c.label === simpleIncomeCategoryLabel)
 
     const rateNote = simpleCurrency === 'USD' && simpleRate
       ? `（レート：${simpleRate.rate}円/USD・出典：${simpleRate.source}・${simpleRate.date}）`
@@ -188,6 +200,29 @@ export default function JournalForm({ onSaved }: { onSaved: () => void }): JSX.E
       : `${cat?.label}${rateNote}`
 
     setSimpleError('')
+
+    // 消費税の処理
+    const taxAcc = isTaxable && taxRate !== null
+      ? accounts.find(a => a.code === taxAccountCode)
+      : null
+
+    // 仕訳明細を構築
+    const journalLines: { type: 'debit' | 'credit'; accountId: number; amount: number }[] = []
+
+    if (entryType === 'expense') {
+      journalLines.push({ type: 'debit',  accountId: debitAccount.id,  amount: taxAcc ? preTaxAmount : amount })
+      if (taxAcc && taxAmount > 0) {
+        journalLines.push({ type: 'debit', accountId: taxAcc.id, amount: taxAmount })
+      }
+      journalLines.push({ type: 'credit', accountId: creditAccount.id, amount: amount })
+    } else {
+      journalLines.push({ type: 'debit',  accountId: debitAccount.id,  amount: amount })
+      journalLines.push({ type: 'credit', accountId: creditAccount.id, amount: taxAcc ? preTaxAmount : amount })
+      if (taxAcc && taxAmount > 0) {
+        journalLines.push({ type: 'credit', accountId: taxAcc.id, amount: taxAmount })
+      }
+    }
+
     await window.api.journals.create({
       date: simpleDate, description: desc, memo: simpleMemo,
       receiptPath: receiptPath, invoiceId: null,
@@ -195,14 +230,12 @@ export default function JournalForm({ onSaved }: { onSaved: () => void }): JSX.E
       currency: simpleCurrency,
       originalAmount: simpleCurrency === 'USD' ? parseFloat(simpleOriginal) : null,
       exchangeRate: simpleCurrency === 'USD' ? simpleRate?.rate ?? null : null,
-      lines: [
-        { type: 'debit',  accountId: debitAccount.id,  amount },
-        { type: 'credit', accountId: creditAccount.id, amount },
-      ]
+      lines: journalLines
     })
 
     setSimpleAmount(''); setSimpleMemo(''); setSimpleOriginal('')
     setSimpleCurrency('JPY'); setSimpleRate(null); setSimpleError('')
+    setReceiptPath(null); setTaxRate(null)
     onSaved()
   }
 
@@ -252,7 +285,6 @@ export default function JournalForm({ onSaved }: { onSaved: () => void }): JSX.E
   )
 
   const selectedExpenseCat = expenseCategories.find(c => c.code === simpleCategory)
-  const selectedIncomeCat  = incomeCategories.find(c => c.code === simpleIncomeCategoryLabel)
 
   return (
     <div>
@@ -477,6 +509,32 @@ export default function JournalForm({ onSaved }: { onSaved: () => void }): JSX.E
             </div>
           )}
 
+          {/* 消費税（課税事業者のみ・金額入力後に表示） */}
+          {isTaxable && simpleJPY > 0 && (
+            <div className="form-group">
+              <label className="form-label">消費税</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={taxRate !== null}
+                    onChange={e => setTaxRate(e.target.checked ? standardRate : null)} />
+                  <span style={{ fontSize: 13 }}>消費税を計上する</span>
+                </label>
+                {taxRate !== null && (
+                  <select className="form-select" style={{ width: 120 }} value={effectiveTaxRate}
+                    onChange={e => setTaxRate(parseInt(e.target.value))}>
+                    <option value={standardRate}>{standardRate}%（標準）</option>
+                    <option value={reducedRate}>{reducedRate}%（軽減）</option>
+                  </select>
+                )}
+              </div>
+              {taxRate !== null && (
+                <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 6 }}>
+                  消費税額：{taxAmount.toLocaleString()} 円 / 税抜額：{preTaxAmount.toLocaleString()} 円（税込から逆算）
+                </div>
+              )}
+            </div>
+          )}
+
           {/* メモ */}
           <div className="form-group">
             <label className="form-label">📝 メモ（任意）</label>
@@ -523,8 +581,14 @@ export default function JournalForm({ onSaved }: { onSaved: () => void }): JSX.E
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 14 }}>
                   <div>
                     <span style={{ color: 'var(--accent)', fontWeight: 700, marginRight: 8 }}>借方</span>
-                    {selectedExpenseCat?.label}　{simpleJPY.toLocaleString()} 円
+                    {selectedExpenseCat?.label}　{(taxAccount ? preTaxAmount : simpleJPY).toLocaleString()} 円
                   </div>
+                  {taxAccount && taxAmount > 0 && (
+                    <div>
+                      <span style={{ color: 'var(--accent)', fontWeight: 700, marginRight: 8 }}>借方</span>
+                      仮払消費税　{taxAmount.toLocaleString()} 円
+                    </div>
+                  )}
                   <div>
                     <span style={{ color: 'var(--accent2)', fontWeight: 700, marginRight: 8 }}>貸方</span>
                     {simplePayment === 'cash' ? '現金' : simplePayment === 'credit' || simplePayment === 'electronic' ? '未払金' : '普通預金'}　{simpleJPY.toLocaleString()} 円
@@ -538,8 +602,14 @@ export default function JournalForm({ onSaved }: { onSaved: () => void }): JSX.E
                   </div>
                   <div>
                     <span style={{ color: 'var(--accent2)', fontWeight: 700, marginRight: 8 }}>貸方</span>
-                    {simpleIncomeCategoryLabel}　{simpleJPY.toLocaleString()} 円
+                    {simpleIncomeCategoryLabel}　{(taxAccount ? preTaxAmount : simpleJPY).toLocaleString()} 円
                   </div>
+                  {taxAccount && taxAmount > 0 && (
+                    <div>
+                      <span style={{ color: 'var(--accent2)', fontWeight: 700, marginRight: 8 }}>貸方</span>
+                      仮受消費税　{taxAmount.toLocaleString()} 円
+                    </div>
+                  )}
                 </div>
               )}
             </div>

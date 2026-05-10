@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-export default function Settings({ showToast }: { showToast: (msg: string, type?: 'success' | 'error' | 'info') => void }): JSX.Element {
+export default function Settings({ showToast, onSaved }: { showToast: (msg: string, type?: 'success' | 'error' | 'info') => void; onSaved: () => void }): JSX.Element {
   const [form, setForm] = useState({
     businessName: '', ownerName: '', openDate: '',
     postalCode: '', address: '', phone: '', email: '',
@@ -8,6 +8,8 @@ export default function Settings({ showToast }: { showToast: (msg: string, type?
     bankName: '', bankBranch: '', bankType: '普通', bankNumber: '', bankHolder: '',
     nationalHealthInsurance: '0', nationalPension: '0',
     lifeInsurance: '0', medicalExpense: '0', otherDeduction: '0',
+    standardTaxRate: '10',
+    reducedTaxRate: '8',
   })
   const [saved, setSaved] = useState(false)
   const [resetConfirm, setResetConfirm] = useState<false | 'data' | 'full'>(false)
@@ -24,6 +26,7 @@ export default function Settings({ showToast }: { showToast: (msg: string, type?
   const handleSave = async () => {
     for (const [k, v] of Object.entries(form)) await window.api.settings.set(k, v)
     showToast('設定を保存しました')
+    onSaved()
   }
 
   const handleReset = async () => {
@@ -38,6 +41,8 @@ export default function Settings({ showToast }: { showToast: (msg: string, type?
       setResetting(false)
     }
   }
+
+  
 
   return (
     <div>
@@ -76,6 +81,15 @@ export default function Settings({ showToast }: { showToast: (msg: string, type?
           <div className="form-group">
             <label className="form-label">メールアドレス</label>
             <input className="form-input" placeholder="例：example@email.com" value={form.email} onChange={e => set('email', e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label className="form-label">インボイス登録番号（課税事業者のみ）</label>
+            <input className="form-input" placeholder="例：T1234567890123"
+              value={form.invoiceRegistrationNumber ?? ''}
+              onChange={e => set('invoiceRegistrationNumber', e.target.value)} />
+            <span style={{ fontSize: 11, color: 'var(--text2)' }}>
+              免税事業者の場合は空欄のままにしてください
+            </span>
           </div>
         </div>
       </div>
@@ -132,6 +146,22 @@ export default function Settings({ showToast }: { showToast: (msg: string, type?
               <option value="taxable_tokuri">課税事業者（2割特例）</option>
             </select>
           </div>
+          {form.taxMode !== 'exempt' && (
+            <div className="form-group">
+              <label className="form-label">標準税率（%）</label>
+              <input type="number" className="form-input" style={{ maxWidth: 100 }}
+                value={form.standardTaxRate ?? '10'}
+                onChange={e => set('standardTaxRate', e.target.value)} />
+            </div>
+          )}
+          {form.taxMode !== 'exempt' && (
+            <div className="form-group">
+              <label className="form-label">軽減税率（%）</label>
+              <input type="number" className="form-input" style={{ maxWidth: 100 }}
+                value={form.reducedTaxRate ?? '8'}
+                onChange={e => set('reducedTaxRate', e.target.value)} />
+            </div>
+          )}
           <div className="form-group">
             <label className="form-label">源泉徴収</label>
             <select className="form-select" value={form.withholding} onChange={e => set('withholding', e.target.value)}>
@@ -303,3 +333,4 @@ export default function Settings({ showToast }: { showToast: (msg: string, type?
     </div>
   )
 }
+

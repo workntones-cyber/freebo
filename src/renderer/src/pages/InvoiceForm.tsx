@@ -1,8 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useAppSettings } from '../App'
 
 interface Item { description: string; quantity: number; unitPrice: string }
 
 export default function InvoiceForm({ onSaved, onCancel }: { onSaved: () => void; onCancel: () => void }): JSX.Element {
+  const settings = useAppSettings()
+  console.log('settings taxMode:', settings.taxMode, 'standardTaxRate:', settings.standardTaxRate)
+  const isTaxable = settings.taxMode !== 'exempt'
+  const standardRate = parseInt(settings.standardTaxRate ?? '10')
+  const reducedRate  = parseInt(settings.reducedTaxRate ?? '8')
+  const [taxRate, setTaxRate] = useState<number | null>(null)
+  const effectiveTaxRate = taxRate ?? standardRate
   const today = new Date().toISOString().slice(0, 10)
   const due   = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
 
@@ -21,6 +29,8 @@ export default function InvoiceForm({ onSaved, onCancel }: { onSaved: () => void
   const removeItem = (i: number) => setItems(items.filter((_, idx) => idx !== i))
 
   const subtotal = items.reduce((s, it) => s + it.quantity * (Number(it.unitPrice) || 0), 0)
+  const taxAmount = isTaxable ? Math.floor(subtotal * effectiveTaxRate / 100) : 0
+  const totalAmount = subtotal + taxAmount
 
   const handleSave = async () => {
     if (!clientName) { setError('クライアント名は必須です'); return }
@@ -28,7 +38,9 @@ export default function InvoiceForm({ onSaved, onCancel }: { onSaved: () => void
     setError('')
     await window.api.invoices.create({
       invoiceNumber, clientName, clientAddress, issueDate, dueDate,
-      subtotal, totalAmount: subtotal, status: 'draft', memo,
+      subtotal, totalAmount, status: 'draft', memo,
+      taxRate: isTaxable ? taxRate : 0,
+      taxAmount,
       items: items.map(it => ({
         description: it.description, quantity: it.quantity,
         unitPrice: Number(it.unitPrice), amount: it.quantity * Number(it.unitPrice)
@@ -88,10 +100,31 @@ export default function InvoiceForm({ onSaved, onCancel }: { onSaved: () => void
         ))}
         <button className="btn btn-ghost" style={{ fontSize: 12, marginBottom: 16 }} onClick={addItem}>＋ 明細を追加</button>
 
-        <div style={{ textAlign: 'right', padding: '12px 0', borderTop: '1px solid var(--border)', marginBottom: 16 }}>
-          <span style={{ fontSize: 18, fontWeight: 700 }}>合計：{subtotal.toLocaleString()} 円</span>
+        <div style={{ padding: '12px 0', borderTop: '1px solid var(--border)', marginBottom: 16 }}>
+          {isTaxable && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+              <span style={{ fontSize: 13, color: 'var(--text2)' }}>消費税率：</span>
+              <select className="form-select" style={{ width: 100 }} value={effectiveTaxRate}
+                onChange={e => setTaxRate(parseInt(e.target.value))}>
+                <option value={standardRate}>{standardRate}%</option>
+                <option value={reducedRate}>{reducedRate}%（軽減）</option>
+              </select>
+            </div>
+          )}
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 4 }}>
+              小計：{subtotal.toLocaleString()} 円
+            </div>
+            {isTaxable && (
+              <div style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 4 }}>
+                消費税（{effectiveTaxRate}%）：{taxAmount.toLocaleString()} 円
+              </div>
+            )}
+            <div style={{ fontSize: 18, fontWeight: 700 }}>
+              合計：{totalAmount.toLocaleString()} 円
+            </div>
+          </div>
         </div>
-
         <div className="form-group">
           <label className="form-label">備考（任意）</label>
           <textarea className="form-textarea" value={memo} onChange={e => setMemo(e.target.value)} />

@@ -37,6 +37,10 @@ export default function Reports({ year, showToast }: { year: number; showToast: 
   const totalRevenue = revenues.reduce((s, r) => s + r.amount, 0)
   const totalExpense = expenses.reduce((s, r) => s + r.amount, 0)
   const netIncome    = totalRevenue - totalExpense
+  // 消費税集計（B/Sから取得）
+  const taxReceivable = bsRows.find(r => r.code === '1060')?.balance ?? 0        // 仮払消費税（資産）
+  const taxPayable    = Math.abs(bsRows.find(r => r.code === '2025')?.balance ?? 0)  // 仮受消費税（負債・マイナスを絶対値に）
+  const taxBalance    = taxPayable - taxReceivable  // 納税予定額
 
   const assets      = bsRows.filter(r => r.category === 'asset')
   const liabilities = bsRows.filter(r => r.category === 'liability')
@@ -133,6 +137,33 @@ export default function Reports({ year, showToast }: { year: number; showToast: 
       </div>
 
       <div ref={printRef}>
+        {/* 消費税サマリー（課税事業者のみ） */}
+        {(taxReceivable > 0 || taxPayable > 0) && (
+          <div className="card" style={{ marginBottom: 16, background: taxBalance > 0 ? 'rgba(217,79,79,0.08)' : 'rgba(40,168,112,0.08)', border: `1px solid ${taxBalance > 0 ? 'var(--danger)' : 'var(--accent2)'}` }}>
+            <h2 style={{ fontSize: 14, marginBottom: 12 }}>消費税サマリー</h2>
+            <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 4 }}>仮受消費税（預かり）</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--danger)' }}>{fmt(taxPayable)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 4 }}>仮払消費税（支払済み）</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--accent2)' }}>{fmt(taxReceivable)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 4 }}>
+                  {taxBalance > 0 ? '納税予定額' : '還付予定額'}
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: taxBalance > 0 ? 'var(--danger)' : 'var(--accent2)' }}>
+                  {fmt(Math.abs(taxBalance))}
+                </div>
+              </div>
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text2)', marginTop: 12 }}>
+              ※ 簡易課税・2割特例の場合は実際の納税額と異なります。
+            </p>
+          </div>
+        )}
         {/* P/L */}
         {tab === 'pl' && (
           <div className="card">

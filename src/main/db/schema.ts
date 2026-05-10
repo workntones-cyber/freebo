@@ -109,4 +109,6 @@ export const defaultAccounts = [
   { code: '5190', name: '雑費',       category: 'expense',  isSystem: false, description: 'どれにも当てはまらない費用' },
   { code: '5195', name: '減価償却費', category: 'expense',  isSystem: false, description: '固定資産の減価償却費' },
   { code: '5196', name: '為替差損',   category: 'expense',  isSystem: false, description: '外貨建て取引の為替差損' },
+  { code: '1060', name: '仮払消費税', category: 'asset',     isSystem: false, description: '課税仕入れに係る消費税額' },
+  { code: '2025', name: '仮受消費税', category: 'liability',  isSystem: false, description: '課税売上げに係る消費税額' },
 ]
