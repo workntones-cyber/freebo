@@ -5,3 +5,5 @@ out
 .eslintcache
 *.log*
 exports/
+src/main/integrations/
+.env
