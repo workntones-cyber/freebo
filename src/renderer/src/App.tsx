@@ -88,6 +88,13 @@ export default function App(): JSX.Element {
     loadSettings()
   }, [])
 
+  // navel同期通知
+  useEffect(() => {
+    window.api.navel.onSynced((count: number) => {
+      showToast(`navelから${count}件の請求書を取り込みました`, 'info')
+    })
+  }, [])
+
   return (
     <SettingsContext.Provider value={appSettings}>
       <div className="layout">

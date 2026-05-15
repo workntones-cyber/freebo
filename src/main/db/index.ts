@@ -68,6 +68,10 @@ export function initDb(): void {
         );
       `)
     }
+    // navel連携カラム追加
+    try { db.prepare(`ALTER TABLE invoices ADD COLUMN navel_billing_id INTEGER`).run() } catch {}
+    try { db.prepare(`ALTER TABLE invoices ADD COLUMN navel_invoice_number TEXT`).run() } catch {}
+    try { db.prepare(`ALTER TABLE invoices ADD COLUMN navel_synced_at TEXT`).run() } catch {}
   })
   migrate()
 

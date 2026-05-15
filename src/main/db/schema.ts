@@ -43,6 +43,9 @@ export const schema = `
     total_amount      INTEGER NOT NULL DEFAULT 0,
     status            TEXT    NOT NULL DEFAULT 'draft',
     memo              TEXT,
+    navel_billing_id     INTEGER UNIQUE,
+    navel_invoice_number TEXT,
+    navel_synced_at      TEXT,
     created_at        TEXT    NOT NULL DEFAULT (datetime('now', 'localtime'))
   );
 

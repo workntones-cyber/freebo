@@ -70,6 +70,11 @@ export interface IApi {
   csv: {
     export: (type: string, year: number, data: unknown[]) => Promise<string | null>
   }
+  navel: {
+    sync: () => Promise<number>
+    isAvailable: () => Promise<boolean>
+    onSynced: (callback: (count: number) => void => void
+  }
 }
 
 declare global {

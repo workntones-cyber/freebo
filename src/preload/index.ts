@@ -96,5 +96,10 @@ contextBridge.exposeInMainWorld('api', {
   csv: {
     export: (type: string, year: number, data: unknown[]) => ipcRenderer.invoke('csv:export', { type, year, data }),
   },
-
+  navel: {
+    sync: () => ipcRenderer.invoke('navel:sync'),
+    isAvailable: () => ipcRenderer.invoke('navel:isAvailable'),
+    onSynced: (callback: (count: number) => void) =>
+      ipcRenderer.on('navel:synced', (_, count) => callback(count)),
+  },
 })

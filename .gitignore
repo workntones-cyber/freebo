@@ -7,3 +7,5 @@ out
 exports/
 src/main/integrations/
 .env
+# navel連携（個人環境専用）
+src/main/navel-sync.ts

@@ -1456,8 +1456,21 @@ app.whenReady().then(() => {
 
   createWindow()
 
-  // 自動バックアップチェック（起動3秒後に実行）
-  setTimeout(() => checkAutoBackup(), 3000)
+  // 自動バックアップ・navel同期（起動3秒後に実行）
+  setTimeout(async () => {
+    await checkAutoBackup()
+    // navel連携（オプション・navel-sync.tsが存在する場合のみ）
+    try {
+      const { syncFromNavel, registerNavelHandlers } = require('./navel-sync')
+      registerNavelHandlers(ipcMain)
+      const synced = await syncFromNavel()
+      if (synced > 0) {
+        BrowserWindow.getAllWindows()[0]?.webContents.send('navel:synced', synced)
+      }
+    } catch {
+      // navel-sync.tsが存在しない場合はスキップ
+    }
+  }, 3000)
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
