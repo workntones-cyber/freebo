@@ -397,24 +397,27 @@ ipcMain.handle('reports:ledger', (_, year: number) => {
   `).all(String(year)) as { id: number; code: string; name: string; category: string }[]
 
   const result = accounts.map(account => {
-    const lines = db.prepare(`
-      SELECT
-        j.date, j.description,
-        jl.type,
-        jl.amount,
-        SUM(CASE WHEN jl2.type = 'debit'  THEN jl2.amount ELSE 0 END) -
-        SUM(CASE WHEN jl2.type = 'credit' THEN jl2.amount ELSE 0 END) as running_balance
-      FROM journal_lines jl
-      JOIN journals j ON j.id = jl.journal_id
-      JOIN journal_lines jl2 ON jl2.journal_id <= jl.journal_id
-        AND jl2.account_id = jl.account_id
-      WHERE jl.account_id = ?
-        AND strftime('%Y', j.date) = ?
-      GROUP BY jl.id
-      ORDER BY j.date, jl.id
-    `).all(account.id, String(year))
+      const rawLines = db.prepare(`
+        SELECT j.date, j.description, jl.type, jl.amount
+        FROM journal_lines jl
+        JOIN journals j ON j.id = jl.journal_id
+        WHERE jl.account_id = ?
+          AND strftime('%Y', j.date) = ?
+        ORDER BY j.date, jl.id
+      `).all(account.id, String(year)) as { date: string; description: string; type: string; amount: number }[]
 
-    return { ...account, lines }
+      // JavaScript側で累計残高を計算
+      let balance = 0
+      const lines = rawLines.map(line => {
+        if (account.category === 'asset' || account.category === 'expense') {
+          balance += line.type === 'debit' ? line.amount : -line.amount
+        } else {
+          balance += line.type === 'credit' ? line.amount : -line.amount
+        }
+        return { ...line, running_balance: balance }
+      })
+
+      return { ...account, lines }
   })
 
   return result
