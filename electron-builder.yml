@@ -16,7 +16,7 @@ asarUnpack:
 win:
   executableName: freebo
   target:
-    - target: portable
+    - target: nsis
       arch:
         - x64
 npmRebuild: true
